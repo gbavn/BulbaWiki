@@ -175,6 +175,9 @@
                   <div class="bw-poke-list">
                     <template x-for="(h,i) in visibleChips('dropsHeld', extra.drops.held)" :key="i">
                       <button class="bw-poke-chip" @click="openItemById(h.items&&h.items.id)">
+                        <template x-if="h.items&&h.items.sprites&&h.items.sprites[0]">
+                          <img :src="h.items.sprites[0]" class="bw-chip-img" loading="lazy">
+                        </template>
                         <span x-text="h.items&&h.items.name"></span>
                         <template x-if="h.roll"><span class="bw-poke-chip-lvl" x-text="h.roll"></span></template>
                       </button>
@@ -192,6 +195,9 @@
                   <div class="bw-poke-list">
                     <template x-for="(pr,i) in visibleChips('dropsProduced', extra.drops.produced)" :key="i">
                       <button class="bw-poke-chip" @click="openItemById(pr.items&&pr.items.id)">
+                        <template x-if="pr.items&&pr.items.sprites&&pr.items.sprites[0]">
+                          <img :src="pr.items.sprites[0]" class="bw-chip-img" loading="lazy">
+                        </template>
                         <span x-text="pr.items&&pr.items.name"></span>
                         <template x-if="pr.tempo"><span class="bw-poke-chip-lvl" x-text="pr.tempo"></span></template>
                       </button>
@@ -233,7 +239,7 @@
                         <template x-for="(mv,i) in group.moves" :key="i">
                           <tr>
                             <td x-text="mv.level||'—'" style="width:60px;opacity:.65"></td>
-                            <td><button class="bw-mlink" @click="openMoveByName(mv.move_name)" x-text="mv.move_name"></button></td>
+                            <td><button class="bw-mlink" @click="openMoveById(mv.move_id)" x-text="mv.moves&&mv.moves.name||mv.move_id"></button></td>
                           </tr>
                         </template>
                       </tbody>
@@ -243,7 +249,7 @@
                   <template x-if="group.method!=='level'">
                     <div class="bw-poke-list">
                       <template x-for="(mv,i) in group.moves" :key="i">
-                        <button class="bw-poke-chip" @click="openMoveByName(mv.move_name)" x-text="mv.move_name"></button>
+                        <button class="bw-poke-chip" @click="openMoveById(mv.move_id)" x-text="mv.moves&&mv.moves.name||mv.move_id"></button>
                       </template>
                     </div>
                   </template>
@@ -288,6 +294,9 @@
                   <div class="bw-poke-list">
                     <template x-for="(h,i) in visibleChips('droppedByHeld', extra.droppedBy.held)" :key="i">
                       <button class="bw-poke-chip" @click="openPokemonById(h.pokemon&&h.pokemon.id)">
+                        <template x-if="h.pokemon&&h.pokemon.artwork_normal">
+                          <img :src="h.pokemon.artwork_normal" class="bw-chip-img" loading="lazy">
+                        </template>
                         <span x-text="h.pokemon&&h.pokemon.name"></span>
                         <template x-if="h.roll"><span class="bw-poke-chip-lvl" x-text="h.roll"></span></template>
                       </button>
@@ -305,6 +314,9 @@
                   <div class="bw-poke-list">
                     <template x-for="(pr,i) in visibleChips('droppedByProduced', extra.droppedBy.produced)" :key="i">
                       <button class="bw-poke-chip" @click="openPokemonById(pr.pokemon&&pr.pokemon.id)">
+                        <template x-if="pr.pokemon&&pr.pokemon.artwork_normal">
+                          <img :src="pr.pokemon.artwork_normal" class="bw-chip-img" loading="lazy">
+                        </template>
                         <span x-text="pr.pokemon&&pr.pokemon.name"></span>
                         <template x-if="pr.tempo"><span class="bw-poke-chip-lvl" x-text="pr.tempo"></span></template>
                       </button>
@@ -427,6 +439,9 @@
               <div class="bw-poke-list">
                 <template x-for="(pm,i) in visibleChips('learnedBy', extra.learnedBy)" :key="i">
                   <button class="bw-poke-chip" @click="openPokemonById(pm.pokemon&&pm.pokemon.id)">
+                    <template x-if="pm.pokemon&&pm.pokemon.artwork_normal">
+                      <img :src="pm.pokemon.artwork_normal" class="bw-chip-img" loading="lazy">
+                    </template>
                     <span x-text="pm.pokemon&&pm.pokemon.name||('Pokémon #'+pm.pokemon_id)"></span>
                     <template x-if="pm.learn_method==='level'&&pm.level"><span class="bw-poke-chip-lvl" x-text="'Nv.'+pm.level"></span></template>
                   </button>
@@ -452,8 +467,11 @@
               <div class="bw-poke-list">
                 <template x-for="(ab,i) in visibleChips('abilityPokemon', extra.pokemon)" :key="i">
                   <button class="bw-poke-chip" @click="openPokemonById(ab.pokemon&&ab.pokemon.id)">
+                    <template x-if="ab.pokemon&&ab.pokemon.artwork_normal">
+                      <img :src="ab.pokemon.artwork_normal" class="bw-chip-img" loading="lazy">
+                    </template>
                     <span x-text="ab.pokemon&&ab.pokemon.name"></span>
-                    <span class="bw-poke-chip-lvl" style="text-transform:capitalize" x-text="ab.slot"></span>
+                    <span class="bw-poke-chip-lvl" style="text-transform:capitalize" x-text="ab.ability_type"></span>
                   </button>
                 </template>
               </div>

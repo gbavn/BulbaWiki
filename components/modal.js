@@ -29,7 +29,7 @@ document.addEventListener('alpine:init', function() {
             ])
             this.extra = { crafting, berry, sources, droppedBy }
           } else if (type === 'move') {
-            const learnedBy = await BwAPI.loadMoveLearnedBy(data.name)
+            const learnedBy = await BwAPI.loadMoveLearnedBy(data.id)
             this.extra = { learnedBy }
           } else if (type === 'ability') {
             const pokemon = await BwAPI.loadAbilityPokemon(data.id)
@@ -68,6 +68,13 @@ document.addEventListener('alpine:init', function() {
       async openMoveByName(name) {
         const all = await BwAPI.loadMoves()
         const m = all.find(function(x) { return x.name === name })
+        if (m) this.openModal('move', m)
+      },
+
+      async openMoveById(id) {
+        if (!id) return
+        const all = await BwAPI.loadMoves()
+        const m = all.find(function(x) { return x.id === id })
         if (m) this.openModal('move', m)
       },
 

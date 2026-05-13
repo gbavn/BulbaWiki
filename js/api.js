@@ -40,7 +40,7 @@ const BwAPI = {
   async loadPokemonMoves(pokemonId) {
     const key = 'pm_' + pokemonId
     if (_cache[key]) return _cache[key]
-    const data = await _pgFetch('pokemon_moves?select=*&pokemon_id=eq.' + pokemonId + '&order=level.asc.nullslast')
+    const data = await _pgFetch('pokemon_moves?select=id,pokemon_id,move_id,level,learn_method,moves(id,name,type,category)&pokemon_id=eq.' + pokemonId + '&order=level.asc.nullslast,move_id.asc')
     _cache[key] = data; return data
   },
 
@@ -138,10 +138,11 @@ const BwAPI = {
   // ── Moves ─────────────────────────────────────────────────
   async loadMoves() { return _all('moves', '*', 'name') },
 
-  async loadMoveLearnedBy(moveName) {
-    const key = 'mlb_' + moveName
+  async loadMoveLearnedBy(moveId) {
+    const key = 'mlb_' + moveId
     if (_cache[key]) return _cache[key]
-    const data = await _pgFetch('pokemon_moves?select=*,pokemon(id,name,pokeapi_id,artwork_normal,type1,type2)&move_name=eq.' + encodeURIComponent(moveName) + '&order=pokemon_id')
+    // move_name coluna nao existe — filtrar por move_id (FK)
+    const data = await _pgFetch('pokemon_moves?select=id,pokemon_id,move_id,level,learn_method,pokemon(id,name,pokeapi_id,artwork_normal,type1,type2)&move_id=eq.' + encodeURIComponent(moveId) + '&order=pokemon_id')
     _cache[key] = data; return data
   },
 
@@ -153,7 +154,7 @@ const BwAPI = {
     const key = 'abpoke_' + abilityId
     if (_cache[key] !== undefined) return _cache[key]
     const data = await _pgFetch(
-      'pokemon_abilities?select=slot,pokemon(id,name,pokeapi_id,artwork_normal,type1,type2)&ability_id=eq.' + abilityId + '&order=pokemon_id'
+      'pokemon_abilities?select=ability_type,pokemon(id,name,pokeapi_id,artwork_normal,type1,type2)&ability_id=eq.' + abilityId + '&order=pokemon_id'
     )
     _cache[key] = data; return data
   },
