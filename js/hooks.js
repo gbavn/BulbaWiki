@@ -64,3 +64,50 @@ function usePagination(perPage) {
     },
   }
 }
+
+// ============================================================
+// usePokemonChips(limit)
+// Gerencia listas de chips de Pokémon com spoiler.
+// Aparece em 3 modais: item ("Obtido de"), move ("Aprendido
+// por") e ability ("Pokémon com esta habilidade").
+//
+// Uso no modal.js: Object.assign(returnObj, usePokemonChips(10))
+// Uso no HTML:
+//   x-for="p in visibleChips('learnedBy', extra.learnedBy)"
+//   x-show="hasMore('learnedBy', extra.learnedBy)"
+//   @click="toggleChips('learnedBy')"
+//   x-text="hiddenCount('learnedBy', extra.learnedBy)"
+// ============================================================
+
+function usePokemonChips(limit) {
+  limit = limit || 10
+  return {
+    _chipsExpanded: {},  // { key: boolean }
+
+    // Reseta o estado de expansão ao abrir um novo modal
+    _resetChips() {
+      this._chipsExpanded = {}
+    },
+
+    // Itens visíveis: primeiros `limit` ou todos se expandido
+    visibleChips(key, items) {
+      items = items || []
+      return this._chipsExpanded[key] ? items : items.slice(0, limit)
+    },
+
+    // Há itens ocultos?
+    hasMore(key, items) {
+      return (items || []).length > limit
+    },
+
+    // Quantos estão ocultos
+    hiddenCount(key, items) {
+      return Math.max(0, (items || []).length - limit)
+    },
+
+    // Alterna expansão
+    toggleChips(key) {
+      this._chipsExpanded[key] = !this._chipsExpanded[key]
+    },
+  }
+}
