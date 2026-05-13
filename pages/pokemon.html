@@ -1,19 +1,14 @@
-<!-- pages/pokemon.html — Lista de Pokémon -->
-<div x-data="{
-  raw: [], filtered: [], page: 1, perPage: 12, loading: true,
-  filtersOpen: false,
-  allTypes: Object.keys(TYPE_COLORS),
-  allEggGroups: [],
-  f: { search: '', type1: '', type2: '', eggGroup: '', canBreed: false, hasArtwork: false },
+<div x-data="Object.assign(usePagination(12), {
+  raw: [], loading: true, filtersOpen: false,
+  allTypes: Object.keys(TYPE_COLORS), allEggGroups: [],
+  f: { search:'', type1:'', type2:'', eggGroup:'', canBreed:false, hasArtwork:false },
 
   async init() {
-    this.raw       = await BwAPI.loadPokemon()
-    this.allEggGroups = [...new Set(
-      this.raw.flatMap(p => [p.egg_group1, p.egg_group2]).filter(Boolean)
-    )].sort()
-    this.applyFilters()
-    this.loading = false
-
+    this.raw = await BwAPI.loadPokemon()
+    const eg = new Set()
+    this.raw.forEach(p => { if(p.egg_group1) eg.add(p.egg_group1); if(p.egg_group2) eg.add(p.egg_group2) })
+    this.allEggGroups = Array.from(eg).sort()
+    this.applyFilters(); this.loading = false
     document.addEventListener('bw:open-pokemon', e => {
       const p = this.raw.find(x => x.id === e.detail.id)
       if (p) this.open(p)
@@ -21,153 +16,86 @@
   },
 
   applyFilters() {
-    const f = this.f, q = (f.search || '').toLowerCase().trim()
-    this.filtered = this.raw.filter(p =>
-      (!q           || p.name.toLowerCase().includes(q)) &&
-      (!f.type1     || (p.type1 || '').toLowerCase() === f.type1) &&
-      (!f.type2     || (p.type2 || '').toLowerCase() === f.type2) &&
-      (!f.eggGroup  || p.egg_group1 === f.eggGroup || p.egg_group2 === f.eggGroup) &&
-      (!f.canBreed  || p.can_breed) &&
-      (!f.hasArtwork|| p.artwork_normal)
+    const f = this.f, q = (f.search||'').toLowerCase().trim()
+    const out = this.raw.filter(p =>
+      (!q          || p.name.toLowerCase().includes(q)) &&
+      (!f.type1    || (p.type1||'').toLowerCase()===f.type1) &&
+      (!f.type2    || (p.type2||'').toLowerCase()===f.type2) &&
+      (!f.eggGroup || p.egg_group1===f.eggGroup||p.egg_group2===f.eggGroup) &&
+      (!f.canBreed || p.can_breed) && (!f.hasArtwork||p.artwork_normal)
     )
-    this.page = 1
+    this.setItems(out)
   },
 
-  clearFilters() {
-    this.f = { search: '', type1: '', type2: '', eggGroup: '', canBreed: false, hasArtwork: false }
-    this.applyFilters()
-  },
+  clearFilters() { this.f={search:'',type1:'',type2:'',eggGroup:'',canBreed:false,hasArtwork:false}; this.applyFilters() },
+  get activeFilters() { const f=this.f; return [f.search,f.type1,f.type2,f.eggGroup,f.canBreed,f.hasArtwork].filter(Boolean).length },
 
-  get activeFilters() {
-    const f = this.f
-    return [f.search, f.type1, f.type2, f.eggGroup, f.canBreed, f.hasArtwork].filter(Boolean).length
-  },
+  open(p) { document.dispatchEvent(new CustomEvent('bw:open-modal',{detail:{type:'pokemon',data:p}})) },
+  typeBadgeStyle(type) { const c=TYPE_COLORS[(type||'').toLowerCase()]||{bg:'#eee',text:'#555',border:'#ccc'}; return 'background:'+c.bg+';color:'+c.text+';border-color:'+c.border },
+})" x-init="init()">
 
-  get paged()      { return this.filtered.slice((this.page-1)*this.perPage, this.page*this.perPage) },
-  get totalPages() { return Math.max(1, Math.ceil(this.filtered.length / this.perPage)) },
-  get pages()      {
-    const total = this.totalPages, cur = this.page
-    if (total <= 7) return Array.from({ length: total }, (_, i) => i+1)
-    const s = new Set([1,2,cur-1,cur,cur+1,total-1,total].filter(p => p>=1 && p<=total))
-    const r = [...s].sort((a,b)=>a-b)
-    const out = []
-    r.forEach((v,i) => { if (i>0 && v-r[i-1]>1) out.push('…'); out.push(v) })
-    return out
-  },
-
-  goTo(p) { if (p>=1 && p<=this.totalPages) this.page = p },
-
-  open(p) {
-    document.dispatchEvent(new CustomEvent('bw:open-modal', { detail: { type: 'pokemon', data: p } }))
-  },
-
-  typeBadgeStyle(type) {
-    const c = TYPE_COLORS[(type||'').toLowerCase()] || { bg:'#eee', text:'#555', border:'#ccc' }
-    return 'background:'+c.bg+';color:'+c.text+';border-color:'+c.border
-  },
-
-  pokemonId(p) { return formatDexId(p.pokeapi_id) },
-}" x-init="init()">
-
-  <!-- Filtros toggle -->
-  <button class="bw-filter-toggle" :class="{ 'has-filters': activeFilters > 0 }" @click="filtersOpen = !filtersOpen">
-    <span>⚙ Filtros</span>
-    <template x-if="activeFilters > 0">
-      <span class="bw-filter-badge" x-text="activeFilters"></span>
-    </template>
-    <span class="bw-filter-arrow" :class="{ open: filtersOpen }">▼</span>
+  <button class="bw-filter-toggle" :class="{'has-filters':activeFilters>0}" @click="filtersOpen=!filtersOpen">
+    <i class="fa-solid fa-sliders"></i> Filtros
+    <template x-if="activeFilters>0"><span class="bw-filter-badge" x-text="activeFilters"></span></template>
+    <i class="fa-solid fa-chevron-down bw-filter-arrow" :class="{open:filtersOpen}"></i>
   </button>
 
-  <!-- Painel de filtros -->
   <div class="bw-filters" x-show="filtersOpen">
-    <div class="bw-fg">
-      <span class="bw-fl">Nome</span>
-      <input class="bw-input" type="search" placeholder="Buscar…" x-model="f.search" @input="applyFilters()">
-    </div>
-    <div class="bw-fg">
-      <span class="bw-fl">Tipo 1</span>
+    <div class="bw-fg"><span class="bw-fl">Nome</span>
+      <input class="bw-input" type="search" placeholder="Buscar…" x-model="f.search" @input="applyFilters()"></div>
+    <div class="bw-fg"><span class="bw-fl">Tipo 1</span>
       <select class="bw-select" x-model="f.type1" @change="applyFilters()">
         <option value="">Todos</option>
-        <template x-for="t in allTypes" :key="t">
-          <option :value="t" x-text="t.charAt(0).toUpperCase()+t.slice(1)"></option>
-        </template>
-      </select>
-    </div>
-    <div class="bw-fg">
-      <span class="bw-fl">Tipo 2</span>
+        <template x-for="t in allTypes" :key="t"><option :value="t" x-text="t.charAt(0).toUpperCase()+t.slice(1)"></option></template>
+      </select></div>
+    <div class="bw-fg"><span class="bw-fl">Tipo 2</span>
       <select class="bw-select" x-model="f.type2" @change="applyFilters()">
         <option value="">Todos</option>
-        <template x-for="t in allTypes" :key="t">
-          <option :value="t" x-text="t.charAt(0).toUpperCase()+t.slice(1)"></option>
-        </template>
-      </select>
-    </div>
-    <div class="bw-fg">
-      <span class="bw-fl">Grupo de Ovo</span>
+        <template x-for="t in allTypes" :key="t"><option :value="t" x-text="t.charAt(0).toUpperCase()+t.slice(1)"></option></template>
+      </select></div>
+    <div class="bw-fg"><span class="bw-fl">Grupo de Ovo</span>
       <select class="bw-select" x-model="f.eggGroup" @change="applyFilters()">
         <option value="">Todos</option>
-        <template x-for="g in allEggGroups" :key="g">
-          <option :value="g" x-text="g"></option>
-        </template>
-      </select>
-    </div>
-    <label class="bw-toggle"><input type="checkbox" x-model="f.canBreed"   @change="applyFilters()"> Pode cruzar</label>
+        <template x-for="g in allEggGroups" :key="g"><option :value="g" x-text="g"></option></template>
+      </select></div>
+    <label class="bw-toggle"><input type="checkbox" x-model="f.canBreed" @change="applyFilters()"> Pode cruzar</label>
     <label class="bw-toggle"><input type="checkbox" x-model="f.hasArtwork" @change="applyFilters()"> Tem artwork</label>
-    <button class="bw-btn-clear" x-show="activeFilters > 0" @click="clearFilters()">Limpar filtros</button>
+    <button class="bw-btn-clear" x-show="activeFilters>0" @click="clearFilters()">Limpar filtros</button>
   </div>
 
-  <!-- Barra de resultados -->
   <div class="bw-bar">
-    <span x-text="filtered.length + ' Pokémon'"></span>
-    <span x-show="totalPages > 1" x-text="'Página ' + page + ' de ' + totalPages"></span>
+    <span x-text="_items.length + ' Pokémon'"></span>
+    <span x-show="totalPages()>1" x-text="'Página '+_page+' de '+totalPages()"></span>
   </div>
 
-  <!-- Grid -->
   <div class="bw-grid-pokemon">
-    <template x-if="loading">
-      <div class="bw-state"><div class="bw-spinner"></div>Carregando Pokémon…</div>
-    </template>
-    <template x-if="!loading && filtered.length === 0">
-      <div class="bw-state">Nenhum Pokémon encontrado.</div>
-    </template>
-    <template x-for="p in paged" :key="p.id">
+    <template x-if="loading"><div class="bw-state"><div class="bw-spinner"></div>Carregando…</div></template>
+    <template x-if="!loading && _items.length===0"><div class="bw-state"><i class="fa-regular fa-circle-xmark" style="font-size:24px;margin-bottom:8px"></i><br>Nenhum Pokémon encontrado.</div></template>
+    <template x-for="p in paged()" :key="p.id">
       <div class="bw-pcard" @click="open(p)">
         <div class="bw-pcard-img">
-          <template x-if="p.artwork_normal">
-            <img :src="p.artwork_normal" :alt="p.name" loading="lazy">
-          </template>
-          <template x-if="!p.artwork_normal">
-            <div class="bw-pcard-ph">◈</div>
-          </template>
+          <template x-if="p.artwork_normal"><img :src="p.artwork_normal" :alt="p.name" loading="lazy"></template>
+          <template x-if="!p.artwork_normal"><div class="bw-pcard-ph"><i class="fa-solid fa-circle-question"></i></div></template>
         </div>
         <div class="bw-pcard-body">
-          <div class="bw-pcard-num" x-text="pokemonId(p)"></div>
+          <div class="bw-pcard-num" x-text="formatDexId(p.pokeapi_id)"></div>
           <div class="bw-pcard-name" x-text="p.name"></div>
           <div style="display:flex;gap:4px;flex-wrap:wrap">
             <span class="bw-badge" :style="typeBadgeStyle(p.type1)" x-text="p.type1"></span>
-            <template x-if="p.type2">
-              <span class="bw-badge" :style="typeBadgeStyle(p.type2)" x-text="p.type2"></span>
-            </template>
+            <template x-if="p.type2"><span class="bw-badge" :style="typeBadgeStyle(p.type2)" x-text="p.type2"></span></template>
           </div>
         </div>
       </div>
     </template>
   </div>
 
-  <!-- Paginação -->
-  <div class="bw-pager" x-show="totalPages > 1">
-    <button class="bw-pager-btn" :disabled="page <= 1" @click="goTo(page-1)">‹</button>
-    <template x-for="(p, i) in pages" :key="i">
-      <template x-if="p === '…'"><div class="bw-pager-ellipsis">…</div></template>
-      <template x-if="p !== '…'">
-        <button class="bw-pager-btn" :class="{ active: page === p }" @click="goTo(p)" x-text="p"></button>
-      </template>
+  <div class="bw-pager" x-show="totalPages()>1">
+    <button class="bw-pager-btn" :disabled="_page<=1" @click="goTo(_page-1)"><i class="fa-solid fa-chevron-left"></i></button>
+    <template x-for="(p,i) in paginationPages()" :key="i">
+      <template x-if="p==='…'"><div class="bw-pager-ellipsis">…</div></template>
+      <template x-if="p!=='…'"><button class="bw-pager-btn" :class="{active:_page===p}" @click="goTo(p)" x-text="p"></button></template>
     </template>
-    <template x-if="totalPages > 7">
-      <input class="bw-pager-input" type="number" min="1" :max="totalPages" placeholder="ir…"
-        @keydown.enter="goTo(parseInt($event.target.value)); $event.target.value=''">
-    </template>
-    <button class="bw-pager-btn" :disabled="page >= totalPages" @click="goTo(page+1)">›</button>
+    <template x-if="totalPages()>7"><input class="bw-pager-input" type="number" min="1" :max="totalPages()" placeholder="ir…" @keydown.enter="jumpTo($event)"></template>
+    <button class="bw-pager-btn" :disabled="_page>=totalPages()" @click="goTo(_page+1)"><i class="fa-solid fa-chevron-right"></i></button>
   </div>
-
 </div>

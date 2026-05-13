@@ -1,180 +1,89 @@
-<!-- pages/moves.html — Lista de Moves -->
-<div x-data="{
-  raw: [], filtered: [], page: 1, perPage: 12, loading: true,
-  filtersOpen: false,
+<div x-data="Object.assign(usePagination(12), {
+  raw: [], loading: true, filtersOpen: false,
   allTypes: Object.keys(TYPE_COLORS),
-  f: { search: '', type: '', category: '', status: '', hasContest: false, powerMin: 0, powerMax: 250 },
+  f: { search:'', type:'', category:'', status:'', hasContest:false },
 
-  async init() {
-    this.raw = await BwAPI.loadMoves()
-    this.applyFilters()
-    this.loading = false
-  },
+  async init() { this.raw = await BwAPI.loadMoves(); this.applyFilters(); this.loading = false },
 
   applyFilters() {
-    const f = this.f, q = (f.search || '').toLowerCase().trim()
-    this.filtered = this.raw.filter(m =>
-      (!q           || m.name.toLowerCase().includes(q)) &&
-      (!f.type      || (m.type || '').toLowerCase() === f.type) &&
-      (!f.category  || m.category === f.category) &&
-      (!f.status    || m.status === f.status) &&
-      (!f.hasContest|| m.contest_points) &&
-      (m.power == null || (m.power >= f.powerMin && m.power <= f.powerMax))
-    )
-    this.page = 1
+    const f=this.f, q=(f.search||'').toLowerCase().trim()
+    this.setItems(this.raw.filter(m =>
+      (!q||m.name.toLowerCase().includes(q)) && (!f.type||(m.type||'').toLowerCase()===f.type) &&
+      (!f.category||m.category===f.category) && (!f.status||m.status===f.status) &&
+      (!f.hasContest||m.contest_points)
+    ))
   },
+  clearFilters() { this.f={search:'',type:'',category:'',status:'',hasContest:false}; this.applyFilters() },
+  get activeFilters() { const f=this.f; return [f.search,f.type,f.category,f.status,f.hasContest].filter(Boolean).length },
 
-  clearFilters() {
-    this.f = { search:'', type:'', category:'', status:'', hasContest:false, powerMin:0, powerMax:250 }
-    this.applyFilters()
-  },
+  open(m) { document.dispatchEvent(new CustomEvent('bw:open-modal',{detail:{type:'move',data:m}})) },
+  typeBadgeStyle(t) { const c=TYPE_COLORS[(t||'').toLowerCase()]||{bg:'#eee',text:'#555',border:'#ccc'}; return 'background:'+c.bg+';color:'+c.text+';border-color:'+c.border },
+  typeHex(t) { return TYPE_HEX[(t||'').toLowerCase()]||'#aaa' },
+  statusBadgeStyle(s) { const c=STATUS_COLORS[s]||STATUS_COLORS.canonical; return 'background:'+c.bg+';color:'+c.text },
+  statusLabel(s) { return STATUS_LABELS[s]||s },
+  catLabel(c)    { return CATEGORY_LABELS[c]||c },
+})" x-init="init()">
 
-  get activeFilters() {
-    const f = this.f
-    return [f.search, f.type, f.category, f.status, f.hasContest].filter(Boolean).length
-  },
-
-  get paged()      { return this.filtered.slice((this.page-1)*this.perPage, this.page*this.perPage) },
-  get totalPages() { return Math.max(1, Math.ceil(this.filtered.length / this.perPage)) },
-  get pages() {
-    const total = this.totalPages, cur = this.page
-    if (total <= 7) return Array.from({ length: total }, (_, i) => i+1)
-    const s = new Set([1,2,cur-1,cur,cur+1,total-1,total].filter(p => p>=1 && p<=total))
-    const r = [...s].sort((a,b)=>a-b)
-    const out = []
-    r.forEach((v,i) => { if (i>0 && v-r[i-1]>1) out.push('…'); out.push(v) })
-    return out
-  },
-  goTo(p) { if (p>=1 && p<=this.totalPages) this.page = p },
-
-  open(m) {
-    document.dispatchEvent(new CustomEvent('bw:open-modal', { detail: { type: 'move', data: m } }))
-  },
-
-  typeBadgeStyle(type) {
-    const c = TYPE_COLORS[(type||'').toLowerCase()] || { bg:'#eee', text:'#555', border:'#ccc' }
-    return 'background:'+c.bg+';color:'+c.text+';border-color:'+c.border
-  },
-  typeHex(type) { return TYPE_HEX[(type||'').toLowerCase()] || '#aaa' },
-  statusBadgeStyle(status) {
-    const c = STATUS_COLORS[status] || STATUS_COLORS.canonical
-    return 'background:'+c.bg+';color:'+c.text
-  },
-  statusLabel(s) { return STATUS_LABELS[s] || s },
-  catLabel(c)    { return CATEGORY_LABELS[c] || c },
-}" x-init="init()">
-
-  <!-- Filtros toggle -->
-  <button class="bw-filter-toggle" :class="{ 'has-filters': activeFilters > 0 }" @click="filtersOpen = !filtersOpen">
-    <span>⚙ Filtros</span>
-    <template x-if="activeFilters > 0">
-      <span class="bw-filter-badge" x-text="activeFilters"></span>
-    </template>
-    <span class="bw-filter-arrow" :class="{ open: filtersOpen }">▼</span>
+  <button class="bw-filter-toggle" :class="{'has-filters':activeFilters>0}" @click="filtersOpen=!filtersOpen">
+    <i class="fa-solid fa-sliders"></i> Filtros
+    <template x-if="activeFilters>0"><span class="bw-filter-badge" x-text="activeFilters"></span></template>
+    <i class="fa-solid fa-chevron-down bw-filter-arrow" :class="{open:filtersOpen}"></i>
   </button>
 
   <div class="bw-filters" x-show="filtersOpen">
-    <div class="bw-fg">
-      <span class="bw-fl">Nome</span>
-      <input class="bw-input" type="search" placeholder="Buscar…" x-model="f.search" @input="applyFilters()">
-    </div>
-    <div class="bw-fg">
-      <span class="bw-fl">Tipo</span>
+    <div class="bw-fg"><span class="bw-fl">Nome</span><input class="bw-input" type="search" placeholder="Buscar…" x-model="f.search" @input="applyFilters()"></div>
+    <div class="bw-fg"><span class="bw-fl">Tipo</span>
       <select class="bw-select" x-model="f.type" @change="applyFilters()">
         <option value="">Todos</option>
-        <template x-for="t in allTypes" :key="t">
-          <option :value="t" x-text="t.charAt(0).toUpperCase()+t.slice(1)"></option>
-        </template>
-      </select>
-    </div>
-    <div class="bw-fg">
-      <span class="bw-fl">Categoria</span>
+        <template x-for="t in allTypes" :key="t"><option :value="t" x-text="t.charAt(0).toUpperCase()+t.slice(1)"></option></template>
+      </select></div>
+    <div class="bw-fg"><span class="bw-fl">Categoria</span>
       <select class="bw-select" x-model="f.category" @change="applyFilters()">
-        <option value="">Todas</option>
-        <option value="physical">Físico</option>
-        <option value="special">Especial</option>
-        <option value="status">Status</option>
-      </select>
-    </div>
-    <div class="bw-fg">
-      <span class="bw-fl">Status</span>
+        <option value="">Todas</option><option value="physical">Físico</option><option value="special">Especial</option><option value="status">Status</option>
+      </select></div>
+    <div class="bw-fg"><span class="bw-fl">Status</span>
       <select class="bw-select" x-model="f.status" @change="applyFilters()">
-        <option value="">Todos</option>
-        <option value="canonical">Padrão</option>
-        <option value="modified">Modificado</option>
-        <option value="original">Original do RPG</option>
-      </select>
-    </div>
-    <div class="bw-fg">
-      <span class="bw-fl">Poder mín</span>
-      <div class="bw-range-wrap">
-        <input class="bw-range" type="range" min="0" max="250" step="5" x-model.number="f.powerMin" @input="applyFilters()">
-        <span class="bw-range-val" x-text="f.powerMin"></span>
-      </div>
-    </div>
+        <option value="">Todos</option><option value="canonical">Padrão</option><option value="modified">Modificado</option><option value="original">Original do RPG</option>
+      </select></div>
     <label class="bw-toggle"><input type="checkbox" x-model="f.hasContest" @change="applyFilters()"> Com contest points</label>
-    <button class="bw-btn-clear" x-show="activeFilters > 0" @click="clearFilters()">Limpar filtros</button>
+    <button class="bw-btn-clear" x-show="activeFilters>0" @click="clearFilters()">Limpar filtros</button>
   </div>
 
   <div class="bw-bar">
-    <span x-text="filtered.length + ' move' + (filtered.length !== 1 ? 's' : '')"></span>
-    <span x-show="totalPages > 1" x-text="'Página ' + page + ' de ' + totalPages"></span>
+    <span x-text="_items.length + ' move' + (_items.length!==1?'s':'')"></span>
+    <span x-show="totalPages()>1" x-text="'Página '+_page+' de '+totalPages()"></span>
   </div>
 
   <div class="bw-grid-wide">
-    <template x-if="loading">
-      <div class="bw-state"><div class="bw-spinner"></div>Carregando moves…</div>
-    </template>
-    <template x-if="!loading && filtered.length === 0">
-      <div class="bw-state">Nenhum move encontrado.</div>
-    </template>
-    <template x-for="m in paged" :key="m.id">
-      <div class="bw-mcard"
-        :style="'background:var(--row);--mcard-color:' + typeHex(m.type)"
-        @click="open(m)">
-        <div class="bw-mcard-stripe" :style="'background:' + typeHex(m.type)"></div>
+    <template x-if="loading"><div class="bw-state"><div class="bw-spinner"></div>Carregando…</div></template>
+    <template x-if="!loading && _items.length===0"><div class="bw-state"><i class="fa-regular fa-circle-xmark" style="font-size:24px;margin-bottom:8px"></i><br>Nenhum move encontrado.</div></template>
+    <template x-for="m in paged()" :key="m.id">
+      <div class="bw-mcard" :style="'background:var(--row);--mcard-color:'+typeHex(m.type)" @click="open(m)">
+        <div class="bw-mcard-stripe" :style="'background:'+typeHex(m.type)"></div>
         <div class="bw-mcard-top">
           <div class="bw-mcard-name" x-text="m.name"></div>
           <div class="bw-mcard-badges">
-            <template x-if="m.type">
-              <span class="bw-badge" :style="typeBadgeStyle(m.type)" x-text="m.type"></span>
-            </template>
+            <template x-if="m.type"><span class="bw-badge" :style="typeBadgeStyle(m.type)" x-text="m.type"></span></template>
           </div>
         </div>
-        <div class="bw-mcard-badges" style="padding-left:8px;display:flex;gap:4px">
-          <template x-if="m.category">
-            <span class="bw-badge-status" style="background:var(--forums)" x-text="catLabel(m.category)"></span>
-          </template>
-          <template x-if="m.status && m.status !== 'canonical'">
-            <span class="bw-badge-status" :style="statusBadgeStyle(m.status)" x-text="statusLabel(m.status)"></span>
-          </template>
-          <template x-if="m.power != null">
-            <span class="bw-badge-status" style="background:var(--forums);opacity:.7" x-text="'⚡ ' + m.power"></span>
-          </template>
-          <template x-if="m.pp != null">
-            <span class="bw-badge-status" style="background:var(--forums);opacity:.7" x-text="'PP ' + m.pp"></span>
-          </template>
+        <div style="padding-left:8px;display:flex;gap:4px;flex-wrap:wrap">
+          <template x-if="m.category"><span class="bw-badge-status" style="background:var(--forums)" x-text="catLabel(m.category)"></span></template>
+          <template x-if="m.status&&m.status!=='canonical'"><span class="bw-badge-status" :style="statusBadgeStyle(m.status)" x-text="statusLabel(m.status)"></span></template>
+          <template x-if="m.power!=null"><span class="bw-badge-status" style="background:var(--forums);opacity:.7" x-text="'⚡ '+m.power"></span></template>
+          <template x-if="m.pp!=null"><span class="bw-badge-status" style="background:var(--forums);opacity:.7" x-text="'PP '+m.pp"></span></template>
         </div>
-        <template x-if="m.description">
-          <div class="bw-mcard-desc" x-text="m.description"></div>
-        </template>
+        <template x-if="m.description"><div class="bw-mcard-desc" x-text="m.description"></div></template>
       </div>
     </template>
   </div>
 
-  <div class="bw-pager" x-show="totalPages > 1">
-    <button class="bw-pager-btn" :disabled="page <= 1" @click="goTo(page-1)">‹</button>
-    <template x-for="(p, i) in pages" :key="i">
-      <template x-if="p === '…'"><div class="bw-pager-ellipsis">…</div></template>
-      <template x-if="p !== '…'">
-        <button class="bw-pager-btn" :class="{ active: page === p }" @click="goTo(p)" x-text="p"></button>
-      </template>
+  <div class="bw-pager" x-show="totalPages()>1">
+    <button class="bw-pager-btn" :disabled="_page<=1" @click="goTo(_page-1)"><i class="fa-solid fa-chevron-left"></i></button>
+    <template x-for="(p,i) in paginationPages()" :key="i">
+      <template x-if="p==='…'"><div class="bw-pager-ellipsis">…</div></template>
+      <template x-if="p!=='…'"><button class="bw-pager-btn" :class="{active:_page===p}" @click="goTo(p)" x-text="p"></button></template>
     </template>
-    <template x-if="totalPages > 7">
-      <input class="bw-pager-input" type="number" min="1" :max="totalPages" placeholder="ir…"
-        @keydown.enter="goTo(parseInt($event.target.value)); $event.target.value=''">
-    </template>
-    <button class="bw-pager-btn" :disabled="page >= totalPages" @click="goTo(page+1)">›</button>
+    <template x-if="totalPages()>7"><input class="bw-pager-input" type="number" min="1" :max="totalPages()" placeholder="ir…" @keydown.enter="jumpTo($event)"></template>
+    <button class="bw-pager-btn" :disabled="_page>=totalPages()" @click="goTo(_page+1)"><i class="fa-solid fa-chevron-right"></i></button>
   </div>
-
 </div>

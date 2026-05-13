@@ -1,143 +1,70 @@
-<!-- pages/abilities.html — Lista de Habilidades -->
-<div x-data="{
-  raw: [], filtered: [], page: 1, perPage: 12, loading: true,
-  filtersOpen: false,
-  f: { search: '', status: '', hasOutEffect: false },
+<div x-data="Object.assign(usePagination(12), {
+  raw: [], loading: true, filtersOpen: false,
+  f: { search:'', status:'', hasOutEffect:false },
 
-  async init() {
-    this.raw = await BwAPI.loadAbilities()
-    this.applyFilters()
-    this.loading = false
-  },
+  async init() { this.raw = await BwAPI.loadAbilities(); this.applyFilters(); this.loading = false },
 
   applyFilters() {
-    const f = this.f, q = (f.search || '').toLowerCase().trim()
-    this.filtered = this.raw.filter(a =>
-      (!q              || a.name.toLowerCase().includes(q)) &&
-      (!f.status       || a.status === f.status) &&
-      (!f.hasOutEffect || a.out_of_battle_effect)
-    )
-    this.page = 1
+    const f=this.f, q=(f.search||'').toLowerCase().trim()
+    this.setItems(this.raw.filter(a =>
+      (!q||a.name.toLowerCase().includes(q)) && (!f.status||a.status===f.status) && (!f.hasOutEffect||a.out_of_battle_effect)
+    ))
   },
+  clearFilters() { this.f={search:'',status:'',hasOutEffect:false}; this.applyFilters() },
+  get activeFilters() { const f=this.f; return [f.search,f.status,f.hasOutEffect].filter(Boolean).length },
 
-  clearFilters() {
-    this.f = { search: '', status: '', hasOutEffect: false }
-    this.applyFilters()
-  },
+  open(a) { document.dispatchEvent(new CustomEvent('bw:open-modal',{detail:{type:'ability',data:a}})) },
+  statusBadgeStyle(s) { const c=STATUS_COLORS[s]||STATUS_COLORS.canonical; return 'background:'+c.bg+';color:'+c.text },
+  statusLabel(s) { return STATUS_LABELS[s]||s },
+  stripeColor(s) { return s==='original'?'#6a2a7a':s==='modified'?'#7a6a10':'#3a6a20' },
+})" x-init="init()">
 
-  get activeFilters() {
-    const f = this.f
-    return [f.search, f.status, f.hasOutEffect].filter(Boolean).length
-  },
-
-  get paged()      { return this.filtered.slice((this.page-1)*this.perPage, this.page*this.perPage) },
-  get totalPages() { return Math.max(1, Math.ceil(this.filtered.length / this.perPage)) },
-  get pages() {
-    const total = this.totalPages, cur = this.page
-    if (total <= 7) return Array.from({ length: total }, (_, i) => i+1)
-    const s = new Set([1,2,cur-1,cur,cur+1,total-1,total].filter(p => p>=1 && p<=total))
-    const r = [...s].sort((a,b)=>a-b)
-    const out = []
-    r.forEach((v,i) => { if (i>0 && v-r[i-1]>1) out.push('…'); out.push(v) })
-    return out
-  },
-  goTo(p) { if (p>=1 && p<=this.totalPages) this.page = p },
-
-  open(a) {
-    document.dispatchEvent(new CustomEvent('bw:open-modal', { detail: { type: 'ability', data: a } }))
-  },
-
-  statusBadgeStyle(status) {
-    const c = STATUS_COLORS[status] || STATUS_COLORS.canonical
-    return 'background:'+c.bg+';color:'+c.text
-  },
-  statusLabel(s) { return STATUS_LABELS[s] || s },
-
-  stripeColor(status) {
-    if (status === 'original') return '#6a2a7a'
-    if (status === 'modified') return '#7a6a10'
-    return '#3a6a20'
-  },
-}" x-init="init()">
-
-  <button class="bw-filter-toggle" :class="{ 'has-filters': activeFilters > 0 }" @click="filtersOpen = !filtersOpen">
-    <span>⚙ Filtros</span>
-    <template x-if="activeFilters > 0">
-      <span class="bw-filter-badge" x-text="activeFilters"></span>
-    </template>
-    <span class="bw-filter-arrow" :class="{ open: filtersOpen }">▼</span>
+  <button class="bw-filter-toggle" :class="{'has-filters':activeFilters>0}" @click="filtersOpen=!filtersOpen">
+    <i class="fa-solid fa-sliders"></i> Filtros
+    <template x-if="activeFilters>0"><span class="bw-filter-badge" x-text="activeFilters"></span></template>
+    <i class="fa-solid fa-chevron-down bw-filter-arrow" :class="{open:filtersOpen}"></i>
   </button>
 
   <div class="bw-filters" x-show="filtersOpen">
-    <div class="bw-fg">
-      <span class="bw-fl">Nome</span>
-      <input class="bw-input" type="search" placeholder="Buscar…" x-model="f.search" @input="applyFilters()">
-    </div>
-    <div class="bw-fg">
-      <span class="bw-fl">Status</span>
+    <div class="bw-fg"><span class="bw-fl">Nome</span><input class="bw-input" type="search" placeholder="Buscar…" x-model="f.search" @input="applyFilters()"></div>
+    <div class="bw-fg"><span class="bw-fl">Status</span>
       <select class="bw-select" x-model="f.status" @change="applyFilters()">
-        <option value="">Todos</option>
-        <option value="canonical">Padrão</option>
-        <option value="modified">Modificado para o RPG</option>
-        <option value="original">Original do RPG</option>
-      </select>
-    </div>
-    <label class="bw-toggle">
-      <input type="checkbox" x-model="f.hasOutEffect" @change="applyFilters()">
-      Com efeito fora de batalha
-    </label>
-    <button class="bw-btn-clear" x-show="activeFilters > 0" @click="clearFilters()">Limpar filtros</button>
+        <option value="">Todos</option><option value="canonical">Padrão</option><option value="modified">Modificado</option><option value="original">Original do RPG</option>
+      </select></div>
+    <label class="bw-toggle"><input type="checkbox" x-model="f.hasOutEffect" @change="applyFilters()"> Com efeito fora de batalha</label>
+    <button class="bw-btn-clear" x-show="activeFilters>0" @click="clearFilters()">Limpar filtros</button>
   </div>
 
   <div class="bw-bar">
-    <span x-text="filtered.length + ' habilidade' + (filtered.length !== 1 ? 's' : '')"></span>
-    <span x-show="totalPages > 1" x-text="'Página ' + page + ' de ' + totalPages"></span>
+    <span x-text="_items.length + ' habilidade' + (_items.length!==1?'s':'')"></span>
+    <span x-show="totalPages()>1" x-text="'Página '+_page+' de '+totalPages()"></span>
   </div>
 
   <div class="bw-grid-wide">
-    <template x-if="loading">
-      <div class="bw-state"><div class="bw-spinner"></div>Carregando habilidades…</div>
-    </template>
-    <template x-if="!loading && filtered.length === 0">
-      <div class="bw-state">Nenhuma habilidade encontrada.</div>
-    </template>
-    <template x-for="a in paged" :key="a.id">
+    <template x-if="loading"><div class="bw-state"><div class="bw-spinner"></div>Carregando…</div></template>
+    <template x-if="!loading && _items.length===0"><div class="bw-state">Nenhuma habilidade encontrada.</div></template>
+    <template x-for="a in paged()" :key="a.id">
       <div class="bw-lcard" @click="open(a)" style="position:relative;padding-left:18px;overflow:hidden">
-        <!-- Stripe de status -->
-        <div style="position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:10px 0 0 10px"
-          :style="'background:' + stripeColor(a.status)"></div>
-
+        <div style="position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:10px 0 0 10px" :style="'background:'+stripeColor(a.status)"></div>
         <div class="bw-lcard-top">
           <div class="bw-lcard-name" x-text="a.name"></div>
-          <div style="display:flex;gap:4px;flex-wrap:wrap;flex-shrink:0">
-            <template x-if="a.status && a.status !== 'canonical'">
-              <span class="bw-badge-status" :style="statusBadgeStyle(a.status)" x-text="statusLabel(a.status)"></span>
-            </template>
-            <template x-if="a.out_of_battle_effect">
-              <span class="bw-badge-status" style="background:var(--forums);font-size:10px">✦ fora de batalha</span>
-            </template>
+          <div style="display:flex;gap:4px;flex-shrink:0">
+            <template x-if="a.status&&a.status!=='canonical'"><span class="bw-badge-status" :style="statusBadgeStyle(a.status)" x-text="statusLabel(a.status)"></span></template>
+            <template x-if="a.out_of_battle_effect"><span class="bw-badge-status" style="background:var(--forums);font-size:10px"><i class="fa-solid fa-star" style="font-size:9px"></i> fora de batalha</span></template>
           </div>
         </div>
-        <template x-if="a.description">
-          <div class="bw-lcard-desc" x-text="a.description"></div>
-        </template>
+        <template x-if="a.description"><div class="bw-lcard-desc" x-text="a.description"></div></template>
       </div>
     </template>
   </div>
 
-  <div class="bw-pager" x-show="totalPages > 1">
-    <button class="bw-pager-btn" :disabled="page <= 1" @click="goTo(page-1)">‹</button>
-    <template x-for="(p, i) in pages" :key="i">
-      <template x-if="p === '…'"><div class="bw-pager-ellipsis">…</div></template>
-      <template x-if="p !== '…'">
-        <button class="bw-pager-btn" :class="{ active: page === p }" @click="goTo(p)" x-text="p"></button>
-      </template>
+  <div class="bw-pager" x-show="totalPages()>1">
+    <button class="bw-pager-btn" :disabled="_page<=1" @click="goTo(_page-1)"><i class="fa-solid fa-chevron-left"></i></button>
+    <template x-for="(p,i) in paginationPages()" :key="i">
+      <template x-if="p==='…'"><div class="bw-pager-ellipsis">…</div></template>
+      <template x-if="p!=='…'"><button class="bw-pager-btn" :class="{active:_page===p}" @click="goTo(p)" x-text="p"></button></template>
     </template>
-    <template x-if="totalPages > 7">
-      <input class="bw-pager-input" type="number" min="1" :max="totalPages" placeholder="ir…"
-        @keydown.enter="goTo(parseInt($event.target.value)); $event.target.value=''">
-    </template>
-    <button class="bw-pager-btn" :disabled="page >= totalPages" @click="goTo(page+1)">›</button>
+    <template x-if="totalPages()>7"><input class="bw-pager-input" type="number" min="1" :max="totalPages()" placeholder="ir…" @keydown.enter="jumpTo($event)"></template>
+    <button class="bw-pager-btn" :disabled="_page>=totalPages()" @click="goTo(_page+1)"><i class="fa-solid fa-chevron-right"></i></button>
   </div>
-
 </div>

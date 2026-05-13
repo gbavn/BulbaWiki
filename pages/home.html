@@ -1,75 +1,29 @@
-<!-- pages/home.html — Página inicial do BulbaWiki -->
 <div style="display:flex;flex-direction:column;gap:18px;max-width:680px">
-
-  <!-- Header -->
   <div style="background:var(--row);border-radius:14px;padding:24px 22px;border:var(--border)">
     <div style="font-size:24px;font-weight:800;color:var(--color);letter-spacing:-.02em;margin-bottom:6px">
-      🌿 BulbaWiki
+      <i class="fa-solid fa-leaf" style="margin-right:8px"></i>BulbaWiki
     </div>
     <div style="font-size:13px;line-height:1.7;opacity:.75">
       A enciclopédia do <strong>BulbaRPG</strong> — consulte Pokémon, moves, habilidades e itens do nosso universo.
-      Os dados são atualizados em tempo real a partir do banco do RPG.
     </div>
   </div>
-
-  <!-- Cards de acesso rápido -->
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px">
-
-    <button onclick="goTo('/pokemon')"
-      style="background:var(--row);border:var(--border);border-radius:12px;padding:18px 14px;
-             cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;
-             transition:transform .15s,box-shadow .15s;font-family:inherit"
-      onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 14px rgba(0,0,0,.15)'"
-      onmouseout="this.style.transform='';this.style.boxShadow=''">
-      <span style="font-size:28px">🔴</span>
-      <span style="font-size:13px;font-weight:600;color:var(--colortext)">Pokémon</span>
+    <button onclick="goTo('/pokemon')" class="bw-home-card">
+      <i class="fa-solid fa-leaf fa-2x" style="color:var(--color)"></i>
+      <span>Pokémon</span>
     </button>
-
-    <button onclick="goTo('/moves')"
-      style="background:var(--row);border:var(--border);border-radius:12px;padding:18px 14px;
-             cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;
-             transition:transform .15s,box-shadow .15s;font-family:inherit"
-      onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 14px rgba(0,0,0,.15)'"
-      onmouseout="this.style.transform='';this.style.boxShadow=''">
-      <span style="font-size:28px">⚡</span>
-      <span style="font-size:13px;font-weight:600;color:var(--colortext)">Moves</span>
+    <button onclick="goTo('/moves')" class="bw-home-card">
+      <i class="fa-solid fa-bolt fa-2x" style="color:var(--color)"></i>
+      <span>Moves</span>
     </button>
-
-    <button onclick="goTo('/abilities')"
-      style="background:var(--row);border:var(--border);border-radius:12px;padding:18px 14px;
-             cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;
-             transition:transform .15s,box-shadow .15s;font-family:inherit"
-      onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 14px rgba(0,0,0,.15)'"
-      onmouseout="this.style.transform='';this.style.boxShadow=''">
-      <span style="font-size:28px">🛡️</span>
-      <span style="font-size:13px;font-weight:600;color:var(--colortext)">Habilidades</span>
+    <button onclick="goTo('/abilities')" class="bw-home-card">
+      <i class="fa-solid fa-shield-halved fa-2x" style="color:var(--color)"></i>
+      <span>Habilidades</span>
     </button>
-
-    <button onclick="goTo('/items')"
-      style="background:var(--row);border:var(--border);border-radius:12px;padding:18px 14px;
-             cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;
-             transition:transform .15s,box-shadow .15s;font-family:inherit"
-      onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 14px rgba(0,0,0,.15)'"
-      onmouseout="this.style.transform='';this.style.boxShadow=''">
-      <span style="font-size:28px">🎒</span>
-      <span style="font-size:13px;font-weight:600;color:var(--colortext)">Itens</span>
+    <button onclick="goTo('/items')" class="bw-home-card">
+      <i class="fa-solid fa-bag-shopping fa-2x" style="color:var(--color)"></i>
+      <span>Itens</span>
     </button>
-
-    <button onclick="goTo('/ficha')"
-      style="background:var(--row);border:var(--border);border-radius:12px;padding:18px 14px;
-             cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;
-             transition:transform .15s,box-shadow .15s;font-family:inherit"
-      onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 14px rgba(0,0,0,.15)'"
-      onmouseout="this.style.transform='';this.style.boxShadow=''">
-      <span style="font-size:28px">📋</span>
-      <span style="font-size:13px;font-weight:600;color:var(--colortext)">Ficha de Time</span>
-    </button>
-
   </div>
-
-  <!-- Nota de rodapé -->
-  <div style="font-size:11px;opacity:.4;text-align:center;padding-bottom:8px">
-    BulbaWiki · dados em tempo real · bulbarpg.forumeiros.com
-  </div>
-
+  <div style="font-size:11px;opacity:.4;text-align:center">BulbaWiki · dados em tempo real · bulbarpg.forumeiros.com</div>
 </div>
