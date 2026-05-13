@@ -1,6 +1,5 @@
 // ============================================================
 // BulbaWiki — constants.js
-// Constantes compartilhadas entre api.js, app.js e ficha.js
 // ============================================================
 
 const TYPE_COLORS = {
@@ -24,7 +23,6 @@ const TYPE_COLORS = {
   fairy:    { bg: '#fde8f5', text: '#8a1a6a', border: '#f0a0d8' },
 }
 
-// Hex sólido por tipo (para stripes e backgrounds de card)
 const TYPE_HEX = {
   normal:'#a8a878',  fire:'#f08030',    water:'#6890f0',   electric:'#f8d030',
   grass:'#78c850',   ice:'#98d8d8',     fighting:'#c03028', poison:'#a040a0',
@@ -51,15 +49,20 @@ const CATEGORY_LABELS = {
   status:   'Status',
 }
 
+// Valores reais do banco: 'level', 'initial', 'evo', 'egg', 'learnable', 'contest', 'unknown'
+// ATENÇÃO: o banco usa 'level' (não 'level-up')
 const METHOD_LABELS = {
-  'level-up':  'Por Nível',
-  'machine':   'Por MT',
-  'egg':       'Por Ovo',
-  'learnable': 'Aprendível',
   'initial':   'Inicial',
   'evo':       'Por Evolução',
+  'level':     'Por Nível',
+  'learnable': 'Aprendível',
+  'egg':       'Egg Move',
   'contest':   'Contest',
+  'unknown':   'Desconhecido',
 }
+
+// Ordem de exibição dos grupos de moves (per user spec)
+const MOVE_ORDER = ['initial', 'evo', 'level', 'learnable', 'egg', 'contest', 'unknown']
 
 const STAT_META = [
   { key: 'hp',         label: 'HP',     color: '#4caf50' },
