@@ -1,6 +1,6 @@
 document.addEventListener('alpine:init', function() {
   Alpine.data('modal', function() {
-    return {
+    var base = {
       open: false, type: null, data: null, extra: null, loading: false,
       history: [], copiedUrl: false, activeArtwork: 'normal', carouselIdx: 0,
 
@@ -8,6 +8,7 @@ document.addEventListener('alpine:init', function() {
         push = push !== false
         if (push && this.open) this.history.push({ type: this.type, data: this.data })
         this.activeArtwork = 'normal'; this.carouselIdx = 0
+        this._resetChips()
         this.open = true; this.type = type; this.data = data; this.extra = null; this.loading = true
         window.location.hash = type + '-' + data.id
         try {
@@ -42,6 +43,7 @@ document.addEventListener('alpine:init', function() {
 
       closeModal() {
         this.open = false; this.type = null; this.data = null; this.extra = null; this.history = []
+        this._resetChips()
         history.pushState('', document.title, window.location.pathname + window.location.search)
       },
 
@@ -57,6 +59,7 @@ document.addEventListener('alpine:init', function() {
       },
 
       async openPokemonById(id) {
+        if (!id) return
         const all = await BwAPI.loadPokemon()
         const p = all.find(function(x) { return x.id === id })
         if (p) this.openModal('pokemon', p)
@@ -69,11 +72,11 @@ document.addEventListener('alpine:init', function() {
       },
 
       async openItemById(id) {
+        if (!id) return
         const item = BwAPI.getItemById(id)
         if (item) this.openModal('item', item)
       },
 
-      // Helpers
       artworkUrl(p) {
         if (!p) return null
         if (this.activeArtwork === 'shadow' && p.artwork_shadow) return p.artwork_shadow
@@ -90,8 +93,7 @@ document.addEventListener('alpine:init', function() {
       statusLabel(s) { return STATUS_LABELS[s] || s },
       catLabel(c)    { return CATEGORY_LABELS[c] || c },
       methodLabel(m) { return METHOD_LABELS[m] || m },
-
-      pokemonId(p) { return p ? formatDexId(p.pokeapi_id) : '' },
+      pokemonId(p)   { return p ? formatDexId(p.pokeapi_id) : '' },
 
       statRows(p) {
         if (!p) return []
@@ -100,7 +102,6 @@ document.addEventListener('alpine:init', function() {
       statTotal(p) { return p ? STAT_META.reduce(function(sum,s){ return sum+(p[s.key]||0) }, 0) : 0 },
       statBarPct(val) { return Math.min(100, Math.round((val/255)*100)) + '%' },
 
-      // FIXED: usa MOVE_ORDER de constants.js + agrupa por 'level' (não 'level-up')
       groupedMoves(moves) {
         const map = {}
         moves.forEach(function(m) {
@@ -145,5 +146,8 @@ document.addEventListener('alpine:init', function() {
       formatTime(t)    { return formatTime(t) },
       rarityLabel(n)   { return rarityLabel(n) },
     }
+
+    // Merge do hook usePokemonChips (spoiler de chips de Pokémon)
+    return Object.assign(base, usePokemonChips(10))
   })
 })
