@@ -803,3 +803,19 @@ a { text-decoration: none; }
   display: block;
 }
 .bw-chips-more:hover { opacity: 1; background: var(--row); }
+
+/* ── TYPE / CATEGORY PNG BADGES ──────────────────────────── */
+.bw-type-img {
+  height: 20px;
+  width: auto;
+  vertical-align: middle;
+  image-rendering: pixelated;
+  display: inline-block;
+}
+.bw-cat-img {
+  height: 18px;
+  width: auto;
+  vertical-align: middle;
+  image-rendering: pixelated;
+  display: inline-block;
+}

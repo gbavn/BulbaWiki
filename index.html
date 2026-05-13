@@ -47,10 +47,10 @@
             <template x-if="type==='pokemon'&&data"><div class="bw-mhead-sub" x-text="pokemonId(data)"></div></template>
             <template x-if="type==='item'&&data&&data.category_name"><div class="bw-mhead-sub" x-text="data.category_name"></div></template>
             <div class="bw-mhead-badges">
-              <template x-if="type==='pokemon'&&data&&data.type1"><span class="bw-badge" :style="typeBadgeStyle(data.type1)" x-text="data.type1"></span></template>
-              <template x-if="type==='pokemon'&&data&&data.type2"><span class="bw-badge" :style="typeBadgeStyle(data.type2)" x-text="data.type2"></span></template>
-              <template x-if="type==='move'&&data&&data.type"><span class="bw-badge" :style="typeBadgeStyle(data.type)" x-text="data.type"></span></template>
-              <template x-if="type==='move'&&data&&data.category"><span class="bw-badge-status" style="background:var(--row)" x-text="catLabel(data.category)"></span></template>
+              <template x-if="type==='pokemon'&&data&&data.type1"><img class="bw-type-img" :src="'assets/types/type-'+data.type1+'.png'" :alt="data.type1" @error="this.style.display='none'"></template>
+              <template x-if="type==='pokemon'&&data&&data.type2"><img class="bw-type-img" :src="'assets/types/type-'+data.type2+'.png'" :alt="data.type2" @error="this.style.display='none'"></template>
+              <template x-if="type==='move'&&data&&data.type"><img class="bw-type-img" :src="'assets/types/type-'+data.type+'.png'" :alt="data.type" @error="this.style.display='none'"></template>
+              <template x-if="type==='move'&&data&&data.category"><img class="bw-cat-img" :src="'assets/categories/category-'+data.category+'.png'" :alt="data.category" @error="this.style.display='none'"></template>
               <template x-if="(type==='move'||type==='ability')&&data&&data.status"><span class="bw-badge-status" :style="statusBadgeStyle(data.status)" x-text="statusLabel(data.status)"></span></template>
             </div>
           </div>

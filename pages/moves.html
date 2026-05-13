@@ -63,11 +63,11 @@
         <div class="bw-mcard-top">
           <div class="bw-mcard-name" x-text="m.name"></div>
           <div class="bw-mcard-badges">
-            <template x-if="m.type"><span class="bw-badge" :style="typeBadgeStyle(m.type)" x-text="m.type"></span></template>
+            <template x-if="m.type"><img class="bw-type-img" :src="'assets/types/type-'+m.type+'.png'" :alt="m.type" @error="this.style.display='none'"></template>
           </div>
         </div>
         <div style="padding-left:8px;display:flex;gap:4px;flex-wrap:wrap">
-          <template x-if="m.category"><span class="bw-badge-status" style="background:var(--forums)" x-text="catLabel(m.category)"></span></template>
+          <template x-if="m.category"><img class="bw-cat-img" :src="'assets/categories/category-'+m.category+'.png'" :alt="m.category" @error="this.style.display='none'"></template>
           <template x-if="m.status&&m.status!=='canonical'"><span class="bw-badge-status" :style="statusBadgeStyle(m.status)" x-text="statusLabel(m.status)"></span></template>
           <template x-if="m.power!=null"><span class="bw-badge-status" style="background:var(--forums);opacity:.7" x-text="'⚡ '+m.power"></span></template>
           <template x-if="m.pp!=null"><span class="bw-badge-status" style="background:var(--forums);opacity:.7" x-text="'PP '+m.pp"></span></template>

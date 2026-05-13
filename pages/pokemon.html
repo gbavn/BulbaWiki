@@ -81,8 +81,8 @@
           <div class="bw-pcard-num" x-text="formatDexId(p.pokeapi_id)"></div>
           <div class="bw-pcard-name" x-text="p.name"></div>
           <div style="display:flex;gap:4px;flex-wrap:wrap">
-            <span class="bw-badge" :style="typeBadgeStyle(p.type1)" x-text="p.type1"></span>
-            <template x-if="p.type2"><span class="bw-badge" :style="typeBadgeStyle(p.type2)" x-text="p.type2"></span></template>
+            <img class="bw-type-img" :src="'assets/types/type-'+p.type1+'.png'" :alt="p.type1" @error="this.style.display='none'">
+            <template x-if="p.type2"><img class="bw-type-img" :src="'assets/types/type-'+p.type2+'.png'" :alt="p.type2" @error="this.style.display='none'"></template>
           </div>
         </div>
       </div>
