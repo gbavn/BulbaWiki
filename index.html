@@ -173,26 +173,34 @@
                 <div style="margin-bottom:8px">
                   <div class="bw-method-label"><i class="fa-solid fa-hand-holding"></i> Itens carregados</div>
                   <div class="bw-poke-list">
-                    <template x-for="(h,i) in extra.drops.held" :key="i">
+                    <template x-for="(h,i) in visibleChips('dropsHeld', extra.drops.held)" :key="i">
                       <button class="bw-poke-chip" @click="openItemById(h.items&&h.items.id)">
                         <span x-text="h.items&&h.items.name"></span>
                         <template x-if="h.roll"><span class="bw-poke-chip-lvl" x-text="h.roll"></span></template>
                       </button>
                     </template>
                   </div>
+                  <button x-show="hasMore('dropsHeld', extra.drops.held)" @click="toggleChips('dropsHeld')" class="bw-chips-more">
+                    <span x-show="!_chipsExpanded['dropsHeld']">Ver mais (<span x-text="hiddenCount('dropsHeld', extra.drops.held)"></span>)</span>
+                    <span x-show="_chipsExpanded['dropsHeld']">Mostrar menos</span>
+                  </button>
                 </div>
               </template>
               <template x-if="extra.drops.produced&&extra.drops.produced.length>0">
                 <div>
                   <div class="bw-method-label"><i class="fa-solid fa-seedling"></i> Itens produzidos</div>
                   <div class="bw-poke-list">
-                    <template x-for="(pr,i) in extra.drops.produced" :key="i">
+                    <template x-for="(pr,i) in visibleChips('dropsProduced', extra.drops.produced)" :key="i">
                       <button class="bw-poke-chip" @click="openItemById(pr.items&&pr.items.id)">
                         <span x-text="pr.items&&pr.items.name"></span>
                         <template x-if="pr.tempo"><span class="bw-poke-chip-lvl" x-text="pr.tempo"></span></template>
                       </button>
                     </template>
                   </div>
+                  <button x-show="hasMore('dropsProduced', extra.drops.produced)" @click="toggleChips('dropsProduced')" class="bw-chips-more">
+                    <span x-show="!_chipsExpanded['dropsProduced']">Ver mais (<span x-text="hiddenCount('dropsProduced', extra.drops.produced)"></span>)</span>
+                    <span x-show="_chipsExpanded['dropsProduced']">Mostrar menos</span>
+                  </button>
                 </div>
               </template>
             </div>
@@ -278,26 +286,34 @@
                 <div style="margin-bottom:8px">
                   <div class="bw-method-label"><i class="fa-solid fa-hand-holding"></i> Carregado por</div>
                   <div class="bw-poke-list">
-                    <template x-for="(h,i) in extra.droppedBy.held" :key="i">
+                    <template x-for="(h,i) in visibleChips('droppedByHeld', extra.droppedBy.held)" :key="i">
                       <button class="bw-poke-chip" @click="openPokemonById(h.pokemon&&h.pokemon.id)">
                         <span x-text="h.pokemon&&h.pokemon.name"></span>
                         <template x-if="h.roll"><span class="bw-poke-chip-lvl" x-text="h.roll"></span></template>
                       </button>
                     </template>
                   </div>
+                  <button x-show="hasMore('droppedByHeld', extra.droppedBy.held)" @click="toggleChips('droppedByHeld')" class="bw-chips-more">
+                    <span x-show="!_chipsExpanded['droppedByHeld']">Ver mais (<span x-text="hiddenCount('droppedByHeld', extra.droppedBy.held)"></span>)</span>
+                    <span x-show="_chipsExpanded['droppedByHeld']">Mostrar menos</span>
+                  </button>
                 </div>
               </template>
               <template x-if="extra.droppedBy.produced&&extra.droppedBy.produced.length>0">
                 <div>
                   <div class="bw-method-label"><i class="fa-solid fa-seedling"></i> Produzido por</div>
                   <div class="bw-poke-list">
-                    <template x-for="(pr,i) in extra.droppedBy.produced" :key="i">
+                    <template x-for="(pr,i) in visibleChips('droppedByProduced', extra.droppedBy.produced)" :key="i">
                       <button class="bw-poke-chip" @click="openPokemonById(pr.pokemon&&pr.pokemon.id)">
                         <span x-text="pr.pokemon&&pr.pokemon.name"></span>
                         <template x-if="pr.tempo"><span class="bw-poke-chip-lvl" x-text="pr.tempo"></span></template>
                       </button>
                     </template>
                   </div>
+                  <button x-show="hasMore('droppedByProduced', extra.droppedBy.produced)" @click="toggleChips('droppedByProduced')" class="bw-chips-more">
+                    <span x-show="!_chipsExpanded['droppedByProduced']">Ver mais (<span x-text="hiddenCount('droppedByProduced', extra.droppedBy.produced)"></span>)</span>
+                    <span x-show="_chipsExpanded['droppedByProduced']">Mostrar menos</span>
+                  </button>
                 </div>
               </template>
             </div>
@@ -409,13 +425,17 @@
             <div class="bw-msect">
               <div class="bw-msect-title">Aprendido por</div>
               <div class="bw-poke-list">
-                <template x-for="(pm,i) in extra.learnedBy" :key="i">
+                <template x-for="(pm,i) in visibleChips('learnedBy', extra.learnedBy)" :key="i">
                   <button class="bw-poke-chip" @click="openPokemonById(pm.pokemon&&pm.pokemon.id)">
                     <span x-text="pm.pokemon&&pm.pokemon.name||('Pokémon #'+pm.pokemon_id)"></span>
                     <template x-if="pm.learn_method==='level'&&pm.level"><span class="bw-poke-chip-lvl" x-text="'Nv.'+pm.level"></span></template>
                   </button>
                 </template>
               </div>
+              <button x-show="hasMore('learnedBy', extra.learnedBy)" @click="toggleChips('learnedBy')" class="bw-chips-more">
+                <span x-show="!_chipsExpanded['learnedBy']">Ver mais (<span x-text="hiddenCount('learnedBy', extra.learnedBy)"></span>)</span>
+                <span x-show="_chipsExpanded['learnedBy']">Mostrar menos</span>
+              </button>
             </div>
           </template>
         </div>
@@ -430,13 +450,17 @@
             <div class="bw-msect">
               <div class="bw-msect-title">Pokémon com esta habilidade</div>
               <div class="bw-poke-list">
-                <template x-for="(ab,i) in extra.pokemon" :key="i">
+                <template x-for="(ab,i) in visibleChips('abilityPokemon', extra.pokemon)" :key="i">
                   <button class="bw-poke-chip" @click="openPokemonById(ab.pokemon&&ab.pokemon.id)">
                     <span x-text="ab.pokemon&&ab.pokemon.name"></span>
                     <span class="bw-poke-chip-lvl" style="text-transform:capitalize" x-text="ab.slot"></span>
                   </button>
                 </template>
               </div>
+              <button x-show="hasMore('abilityPokemon', extra.pokemon)" @click="toggleChips('abilityPokemon')" class="bw-chips-more">
+                <span x-show="!_chipsExpanded['abilityPokemon']">Ver mais (<span x-text="hiddenCount('abilityPokemon', extra.pokemon)"></span>)</span>
+                <span x-show="_chipsExpanded['abilityPokemon']">Mostrar menos</span>
+              </button>
             </div>
           </template>
         </div>

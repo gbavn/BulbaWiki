@@ -785,3 +785,21 @@ a { text-decoration: none; }
   transform: translateY(-2px);
   box-shadow: 0 4px 14px rgba(0,0,0,.15);
 }
+
+/* ── CHIPS SPOILER BUTTON ────────────────────────────────── */
+.bw-chips-more {
+  margin-top: 6px;
+  background: none;
+  border: var(--border);
+  border-radius: 6px;
+  padding: 3px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  opacity: .65;
+  font-family: inherit;
+  color: var(--colortext);
+  transition: opacity .15s, background .15s;
+  display: block;
+}
+.bw-chips-more:hover { opacity: 1; background: var(--row); }
