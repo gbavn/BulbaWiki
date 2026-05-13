@@ -1,0 +1,166 @@
+<!-- pages/items.html — Lista de Itens -->
+<div x-data="{
+  raw: [], filtered: [], page: 1, perPage: 12, loading: true,
+  filtersOpen: false,
+  allCategories: [],
+  f: { search:'', category:'', hasSprite:false, hasPrice:false, isCraftable:false, isBerry:false, priceMin:0, priceMax:100000 },
+
+  async init() {
+    this.raw           = await BwAPI.loadItems()
+    this.allCategories = await BwAPI.loadItemCategories()
+    this.applyFilters()
+    this.loading = false
+  },
+
+  applyFilters() {
+    const f = this.f, q = (f.search || '').toLowerCase().trim()
+    this.filtered = this.raw.filter(i =>
+      (!q           || i.name.toLowerCase().includes(q)) &&
+      (!f.category  || String(i.category_id) === f.category) &&
+      (!f.hasSprite || (i.sprites && i.sprites.length > 0)) &&
+      (!f.hasPrice  || i.price != null) &&
+      (!f.isCraftable || i.is_craftable) &&
+      (!f.isBerry   || i.is_berry) &&
+      (i.price == null || (i.price >= f.priceMin && i.price <= f.priceMax))
+    )
+    this.page = 1
+  },
+
+  clearFilters() {
+    this.f = { search:'', category:'', hasSprite:false, hasPrice:false, isCraftable:false, isBerry:false, priceMin:0, priceMax:100000 }
+    this.applyFilters()
+  },
+
+  get activeFilters() {
+    const f = this.f
+    return [f.search, f.category, f.hasSprite, f.hasPrice, f.isCraftable, f.isBerry].filter(Boolean).length
+  },
+
+  get paged()      { return this.filtered.slice((this.page-1)*this.perPage, this.page*this.perPage) },
+  get totalPages() { return Math.max(1, Math.ceil(this.filtered.length / this.perPage)) },
+  get pages() {
+    const total = this.totalPages, cur = this.page
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i+1)
+    const s = new Set([1,2,cur-1,cur,cur+1,total-1,total].filter(p => p>=1 && p<=total))
+    const r = [...s].sort((a,b)=>a-b)
+    const out = []
+    r.forEach((v,i) => { if (i>0 && v-r[i-1]>1) out.push('…'); out.push(v) })
+    return out
+  },
+  goTo(p) { if (p>=1 && p<=this.totalPages) this.page = p },
+
+  open(item) {
+    document.dispatchEvent(new CustomEvent('bw:open-modal', { detail: { type: 'item', data: item } }))
+  },
+
+  sprites(item) {
+    if (!item || !item.sprites) return []
+    return Array.isArray(item.sprites) ? item.sprites.filter(Boolean) : []
+  },
+
+  fmtPrice(p) {
+    if (p == null) return null
+    return '₽\u202f' + Number(p).toLocaleString('pt-BR')
+  },
+}" x-init="init()">
+
+  <button class="bw-filter-toggle" :class="{ 'has-filters': activeFilters > 0 }" @click="filtersOpen = !filtersOpen">
+    <span>⚙ Filtros</span>
+    <template x-if="activeFilters > 0">
+      <span class="bw-filter-badge" x-text="activeFilters"></span>
+    </template>
+    <span class="bw-filter-arrow" :class="{ open: filtersOpen }">▼</span>
+  </button>
+
+  <div class="bw-filters" x-show="filtersOpen">
+    <div class="bw-fg">
+      <span class="bw-fl">Nome</span>
+      <input class="bw-input" type="search" placeholder="Buscar…" x-model="f.search" @input="applyFilters()">
+    </div>
+    <div class="bw-fg">
+      <span class="bw-fl">Categoria</span>
+      <select class="bw-select" x-model="f.category" @change="applyFilters()">
+        <option value="">Todas</option>
+        <template x-for="cat in allCategories" :key="cat.id">
+          <option :value="String(cat.id)" x-text="cat.name"></option>
+        </template>
+      </select>
+    </div>
+    <div class="bw-fg">
+      <span class="bw-fl">Preço mín (₽)</span>
+      <div class="bw-range-wrap">
+        <input class="bw-range" type="range" min="0" max="100000" step="500" x-model.number="f.priceMin" @input="applyFilters()">
+        <span class="bw-range-val" x-text="f.priceMin.toLocaleString('pt-BR')"></span>
+      </div>
+    </div>
+    <div class="bw-fg">
+      <span class="bw-fl">Preço máx (₽)</span>
+      <div class="bw-range-wrap">
+        <input class="bw-range" type="range" min="0" max="100000" step="500" x-model.number="f.priceMax" @input="applyFilters()">
+        <span class="bw-range-val" x-text="f.priceMax >= 100000 ? '100.000+' : f.priceMax.toLocaleString('pt-BR')"></span>
+      </div>
+    </div>
+    <label class="bw-toggle"><input type="checkbox" x-model="f.hasSprite"   @change="applyFilters()"> Tem sprite</label>
+    <label class="bw-toggle"><input type="checkbox" x-model="f.hasPrice"    @change="applyFilters()"> Tem preço</label>
+    <label class="bw-toggle"><input type="checkbox" x-model="f.isCraftable" @change="applyFilters()"> É craftável</label>
+    <label class="bw-toggle"><input type="checkbox" x-model="f.isBerry"     @change="applyFilters()"> É berry</label>
+    <button class="bw-btn-clear" x-show="activeFilters > 0" @click="clearFilters()">Limpar filtros</button>
+  </div>
+
+  <div class="bw-bar">
+    <span x-text="filtered.length + ' ite' + (filtered.length !== 1 ? 'ns' : 'm')"></span>
+    <span x-show="totalPages > 1" x-text="'Página ' + page + ' de ' + totalPages"></span>
+  </div>
+
+  <div class="bw-grid-wide">
+    <template x-if="loading">
+      <div class="bw-state"><div class="bw-spinner"></div>Carregando itens…</div>
+    </template>
+    <template x-if="!loading && filtered.length === 0">
+      <div class="bw-state">Nenhum item encontrado.</div>
+    </template>
+    <template x-for="item in paged" :key="item.id">
+      <div class="bw-icard" @click="open(item)">
+        <div class="bw-icard-img">
+          <template x-if="sprites(item).length > 0">
+            <img :src="sprites(item)[0]" :alt="item.name" loading="lazy">
+          </template>
+          <template x-if="sprites(item).length === 0">
+            <div class="bw-icard-img-ph">◈</div>
+          </template>
+        </div>
+        <div class="bw-icard-body">
+          <div class="bw-icard-name" x-text="item.name"></div>
+          <div class="bw-icard-cat" x-text="item.category_name || '—'"></div>
+          <template x-if="item.price != null">
+            <div class="bw-icard-price" x-text="fmtPrice(item.price)"></div>
+          </template>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:2px">
+            <template x-if="item.is_craftable">
+              <span class="bw-badge-status" style="background:#e8f5e0;color:#3a6a20;font-size:10px;padding:1px 6px">Craftável</span>
+            </template>
+            <template x-if="item.is_berry">
+              <span class="bw-badge-status" style="background:#fff8d0;color:#7a6a10;font-size:10px;padding:1px 6px">Berry</span>
+            </template>
+          </div>
+        </div>
+      </div>
+    </template>
+  </div>
+
+  <div class="bw-pager" x-show="totalPages > 1">
+    <button class="bw-pager-btn" :disabled="page <= 1" @click="goTo(page-1)">‹</button>
+    <template x-for="(p, i) in pages" :key="i">
+      <template x-if="p === '…'"><div class="bw-pager-ellipsis">…</div></template>
+      <template x-if="p !== '…'">
+        <button class="bw-pager-btn" :class="{ active: page === p }" @click="goTo(p)" x-text="p"></button>
+      </template>
+    </template>
+    <template x-if="totalPages > 7">
+      <input class="bw-pager-input" type="number" min="1" :max="totalPages" placeholder="ir…"
+        @keydown.enter="goTo(parseInt($event.target.value)); $event.target.value=''">
+    </template>
+    <button class="bw-pager-btn" :disabled="page >= totalPages" @click="goTo(page+1)">›</button>
+  </div>
+
+</div>
