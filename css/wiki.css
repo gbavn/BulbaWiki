@@ -385,7 +385,7 @@ a { text-decoration: none; }
 .bw-modal {
   background: var(--wrap);
   border-radius: 14px;
-  width: 100%; max-width: 600px;
+  width: 100%; max-width: 860px;
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: var(--shadow);
@@ -763,3 +763,25 @@ a { text-decoration: none; }
 }
 .bw-ficha-copy-btn:hover { opacity: .85; }
 .bw-ficha-copy-btn.copied { background: #4caf50; }
+
+/* ── HOME CARD ───────────────────────────────────────────── */
+.bw-home-card {
+  background: var(--row);
+  border: var(--border);
+  border-radius: 12px;
+  padding: 18px 14px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--colortext);
+  transition: transform .15s, box-shadow .15s;
+}
+.bw-home-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0,0,0,.15);
+}
