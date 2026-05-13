@@ -5,40 +5,34 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BulbaWiki</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <link rel="stylesheet" href="css/wiki.css">
 <script src="js/constants.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/api.js"></script>
+<script src="js/hooks.js"></script>
 <script src="js/router.js"></script>
-<script src="components/pagination.js"></script>
-<script src="components/filters.js"></script>
 <script src="components/modal.js"></script>
-<script src="components/ficha.js"></script>
 <script defer src="https://unpkg.com/alpinejs@3.14.1/dist/cdn.min.js"></script>
 </head>
 <body>
 <div id="bulbawiki">
 
-  <!-- ── TÍTULO + NAV ──────────────────────────────────────── -->
+  <!-- Nav -->
   <div class="bw-title">
     <div class="bw-title-dot"></div>
     <span class="bw-title-text" style="cursor:pointer" onclick="goTo('/')">BulbaWiki</span>
   </div>
-
   <nav class="bw-tabs">
-    <button class="bw-tab" id="tab-pokemon"    onclick="goTo('/pokemon')">Pokémon</button>
-    <button class="bw-tab" id="tab-moves"      onclick="goTo('/moves')">Moves</button>
-    <button class="bw-tab" id="tab-abilities"  onclick="goTo('/abilities')">Habilidades</button>
-    <button class="bw-tab" id="tab-items"      onclick="goTo('/items')">Itens</button>
-    <button class="bw-tab" id="tab-ficha"      onclick="goTo('/ficha')">Ficha</button>
+    <button class="bw-tab" id="tab-pokemon"   onclick="goTo('/pokemon')"><i class="fa-solid fa-leaf"></i> Pokémon</button>
+    <button class="bw-tab" id="tab-moves"     onclick="goTo('/moves')"><i class="fa-solid fa-bolt"></i> Moves</button>
+    <button class="bw-tab" id="tab-abilities" onclick="goTo('/abilities')"><i class="fa-solid fa-shield-halved"></i> Habilidades</button>
+    <button class="bw-tab" id="tab-items"     onclick="goTo('/items')"><i class="fa-solid fa-bag-shopping"></i> Itens</button>
   </nav>
 
-  <!-- ── CONTEÚDO PRINCIPAL ───────────────────────────────── -->
   <main id="bw-main" style="min-height:300px"></main>
 
-  <!-- ══════════════════════════════════════════════════════
-       MODAL GLOBAL — escuta evento bw:open-modal
-  ══════════════════════════════════════════════════════════ -->
+  <!-- Modal global -->
   <div x-data="modal()"
     @bw:open-modal.document="openModal($event.detail.type, $event.detail.data)"
     @keydown.escape.window="if(open) closeModal()">
@@ -49,89 +43,57 @@
         <!-- Header -->
         <div class="bw-mhead" x-show="data">
           <div class="bw-mhead-left">
-            <div class="bw-mhead-title" x-text="data && data.name"></div>
-            <template x-if="type === 'pokemon' && data">
-              <div class="bw-mhead-sub" x-text="pokemonId(data)"></div>
-            </template>
-            <template x-if="type === 'item' && data && data.category_name">
-              <div class="bw-mhead-sub" x-text="data.category_name"></div>
-            </template>
+            <div class="bw-mhead-title" x-text="data&&data.name"></div>
+            <template x-if="type==='pokemon'&&data"><div class="bw-mhead-sub" x-text="pokemonId(data)"></div></template>
+            <template x-if="type==='item'&&data&&data.category_name"><div class="bw-mhead-sub" x-text="data.category_name"></div></template>
             <div class="bw-mhead-badges">
-              <template x-if="type === 'pokemon' && data && data.type1">
-                <span class="bw-badge" :style="typeBadgeStyle(data.type1)" x-text="data.type1"></span>
-              </template>
-              <template x-if="type === 'pokemon' && data && data.type2">
-                <span class="bw-badge" :style="typeBadgeStyle(data.type2)" x-text="data.type2"></span>
-              </template>
-              <template x-if="type === 'move' && data && data.type">
-                <span class="bw-badge" :style="typeBadgeStyle(data.type)" x-text="data.type"></span>
-              </template>
-              <template x-if="type === 'move' && data && data.category">
-                <span class="bw-badge-status" style="background:var(--row)" x-text="catLabel(data.category)"></span>
-              </template>
-              <template x-if="(type === 'move' || type === 'ability') && data && data.status">
-                <span class="bw-badge-status" :style="statusBadgeStyle(data.status)" x-text="statusLabel(data.status)"></span>
-              </template>
+              <template x-if="type==='pokemon'&&data&&data.type1"><span class="bw-badge" :style="typeBadgeStyle(data.type1)" x-text="data.type1"></span></template>
+              <template x-if="type==='pokemon'&&data&&data.type2"><span class="bw-badge" :style="typeBadgeStyle(data.type2)" x-text="data.type2"></span></template>
+              <template x-if="type==='move'&&data&&data.type"><span class="bw-badge" :style="typeBadgeStyle(data.type)" x-text="data.type"></span></template>
+              <template x-if="type==='move'&&data&&data.category"><span class="bw-badge-status" style="background:var(--row)" x-text="catLabel(data.category)"></span></template>
+              <template x-if="(type==='move'||type==='ability')&&data&&data.status"><span class="bw-badge-status" :style="statusBadgeStyle(data.status)" x-text="statusLabel(data.status)"></span></template>
             </div>
           </div>
-          <!-- Botões: Compartilhar | Voltar | Fechar -->
           <div class="bw-mbtns">
-            <button class="bw-mbtn" :class="{ copied: copiedUrl }" @click="copyUrl()"
-              :title="copiedUrl ? 'URL copiada!' : 'Copiar link'">
-              <span x-text="copiedUrl ? '✓' : '🔗'"></span>
+            <button class="bw-mbtn" :class="{copied:copiedUrl}" @click="copyUrl()" :title="copiedUrl?'URL copiada!':'Copiar link'">
+              <i :class="copiedUrl?'fa-solid fa-check':'fa-solid fa-link'"></i>
             </button>
-            <template x-if="history.length > 0">
-              <button class="bw-mbtn" @click="goBack()" title="Voltar">←</button>
+            <template x-if="history.length>0">
+              <button class="bw-mbtn" @click="goBack()" title="Voltar"><i class="fa-solid fa-arrow-left"></i></button>
             </template>
-            <button class="bw-mbtn" @click="closeModal()" title="Fechar">✕</button>
+            <button class="bw-mbtn" @click="closeModal()" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
           </div>
         </div>
 
         <div class="bw-mloading" x-show="loading"><div class="bw-spinner"></div></div>
 
         <!-- ── POKÉMON ──────────────────────────────────────── -->
-        <template x-if="type === 'pokemon' && !loading && data">
+        <template x-if="type==='pokemon'&&!loading&&data">
         <div class="bw-mbody">
-
-          <!-- Artwork -->
           <div class="bw-artwork">
-            <template x-if="artworkUrl(data)">
-              <img :src="artworkUrl(data)" :alt="data.name">
-            </template>
-            <template x-if="!artworkUrl(data)">
-              <div class="bw-artwork-ph">◈</div>
-            </template>
-            <div class="bw-artwork-tog" x-show="data.artwork_shadow || data.artwork_aura">
-              <button class="bw-atbtn" :class="{ active: activeArtwork==='normal' }" @click="activeArtwork='normal'">Normal</button>
-              <template x-if="data.artwork_shadow">
-                <button class="bw-atbtn" :class="{ active: activeArtwork==='shadow' }" @click="activeArtwork='shadow'">Sombra</button>
-              </template>
-              <template x-if="data.artwork_aura">
-                <button class="bw-atbtn" :class="{ active: activeArtwork==='aura' }" @click="activeArtwork='aura'">Aura</button>
-              </template>
+            <template x-if="artworkUrl(data)"><img :src="artworkUrl(data)" :alt="data.name"></template>
+            <template x-if="!artworkUrl(data)"><div class="bw-artwork-ph"><i class="fa-solid fa-circle-question"></i></div></template>
+            <div class="bw-artwork-tog" x-show="data.artwork_shadow||data.artwork_aura">
+              <button class="bw-atbtn" :class="{active:activeArtwork==='normal'}" @click="activeArtwork='normal'">Normal</button>
+              <template x-if="data.artwork_shadow"><button class="bw-atbtn" :class="{active:activeArtwork==='shadow'}" @click="activeArtwork='shadow'">Sombra</button></template>
+              <template x-if="data.artwork_aura"><button class="bw-atbtn" :class="{active:activeArtwork==='aura'}" @click="activeArtwork='aura'">Aura</button></template>
             </div>
           </div>
 
-          <!-- Info -->
           <div class="bw-msect">
             <div class="bw-msect-title">Informações</div>
             <div class="bw-igrid">
               <div class="bw-irow"><span class="bw-ikey">Gênero</span>
-                <span class="bw-ival" x-text="data.gender_male != null ? ('♂ '+data.gender_male+'% / ♀ '+data.gender_female+'%') : 'Sem gênero'"></span></div>
+                <span class="bw-ival" x-text="data.gender_male!=null?('♂ '+data.gender_male+'% / ♀ '+data.gender_female+'%'):'Sem gênero'"></span></div>
               <template x-if="data.egg_group1">
                 <div class="bw-irow"><span class="bw-ikey">Grupo de Ovo</span>
-                  <span class="bw-ival" x-text="[data.egg_group1, data.egg_group2].filter(Boolean).join(', ')"></span></div>
+                  <span class="bw-ival" x-text="[data.egg_group1,data.egg_group2].filter(Boolean).join(', ')"></span></div>
               </template>
-              <div class="bw-irow"><span class="bw-ikey">Pode cruzar</span>
-                <span class="bw-ival" x-text="data.can_breed ? 'Sim' : 'Não'"></span></div>
-              <template x-if="data.form_type">
-                <div class="bw-irow"><span class="bw-ikey">Forma</span>
-                  <span class="bw-ival" x-text="data.form_type"></span></div>
-              </template>
+              <div class="bw-irow"><span class="bw-ikey">Pode cruzar</span><span class="bw-ival" x-text="data.can_breed?'Sim':'Não'"></span></div>
+              <template x-if="data.form_type"><div class="bw-irow"><span class="bw-ikey">Forma</span><span class="bw-ival" x-text="data.form_type"></span></div></template>
             </div>
           </div>
 
-          <!-- Stats -->
           <div class="bw-msect">
             <div class="bw-msect-title">Estatísticas base</div>
             <div class="bw-stats">
@@ -142,22 +104,19 @@
                   <div class="bw-sval" x-text="s.val"></div>
                 </div>
               </template>
-              <div class="bw-stotal">
-                <div class="bw-stlbl">Total</div>
-                <div class="bw-stval" x-text="statTotal(data)"></div>
-              </div>
+              <div class="bw-stotal"><div class="bw-stlbl">Total</div><div class="bw-stval" x-text="statTotal(data)"></div></div>
             </div>
           </div>
 
           <!-- Habilidades -->
-          <template x-if="extra && extra.abilities && extra.abilities.length > 0">
+          <template x-if="extra&&extra.abilities&&extra.abilities.length>0">
             <div class="bw-msect">
               <div class="bw-msect-title">Habilidades</div>
-              <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="display:flex;flex-direction:column;gap:5px">
                 <template x-for="ab in extra.abilities" :key="ab.id">
-                  <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--row);border-radius:8px">
-                    <span style="font-size:12px;font-weight:600" x-text="ab.abilities && ab.abilities.name"></span>
-                    <span style="font-size:10px;opacity:.5;text-transform:capitalize" x-text="ab.slot"></span>
+                  <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--row);border-radius:8px">
+                    <span style="font-size:12px;font-weight:600" x-text="ab.abilities&&ab.abilities.name"></span>
+                    <span class="bw-badge-status" style="background:var(--forums);font-size:10px;text-transform:capitalize" x-text="ab.slot"></span>
                   </div>
                 </template>
               </div>
@@ -165,56 +124,73 @@
           </template>
 
           <!-- Onde encontrar -->
-          <template x-if="extra && extra.locations && hasLocations(extra.locations)">
+          <template x-if="extra&&extra.locations&&hasLocations(extra.locations)">
             <div class="bw-msect">
               <div class="bw-msect-title">Onde encontrar</div>
-
-              <!-- Mapas -->
-              <template x-if="extra.locations.maps && extra.locations.maps.length > 0">
-                <div style="margin-bottom:10px">
-                  <div class="bw-method-label">Mapas</div>
+              <template x-if="extra.locations.maps&&extra.locations.maps.length>0">
+                <div style="margin-bottom:8px">
+                  <div class="bw-method-label"><i class="fa-solid fa-map"></i> Mapas</div>
                   <div style="display:flex;flex-direction:column;gap:5px">
                     <template x-for="loc in extra.locations.maps" :key="loc.id">
                       <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--row);border-radius:8px;font-size:13px;flex-wrap:wrap">
-                        <template x-if="loc.maps && loc.maps.forum_url">
-                          <a :href="loc.maps.forum_url" target="_blank" rel="noopener"
-                            style="font-weight:600;color:var(--color);text-decoration:none"
-                            x-text="loc.maps && loc.maps.name"></a>
+                        <template x-if="loc.maps&&loc.maps.forum_url">
+                          <a :href="loc.maps.forum_url" target="_blank" rel="noopener" style="font-weight:600;color:var(--color);text-decoration:none" x-text="loc.maps&&loc.maps.name"></a>
                         </template>
-                        <template x-if="!loc.maps || !loc.maps.forum_url">
-                          <span style="font-weight:600" x-text="loc.maps && loc.maps.name"></span>
-                        </template>
+                        <template x-if="!loc.maps||!loc.maps.forum_url"><span style="font-weight:600" x-text="loc.maps&&loc.maps.name"></span></template>
                         <span class="bw-badge-status" style="background:var(--forums);font-size:10px" x-text="rarityLabel(loc.rarity)"></span>
                         <span style="font-size:11px;opacity:.6" x-text="formatSeasons(loc.seasons)"></span>
-                        <template x-if="loc.time_of_day">
-                          <span style="font-size:11px;opacity:.6" x-text="formatTime(loc.time_of_day)"></span>
-                        </template>
+                        <template x-if="loc.time_of_day"><span style="font-size:11px;opacity:.6" x-text="formatTime(loc.time_of_day)"></span></template>
                       </div>
                     </template>
                   </div>
                 </div>
               </template>
-
-              <!-- Objetos de Rota -->
-              <template x-if="extra.locations.routeObjects && extra.locations.routeObjects.length > 0">
+              <template x-if="extra.locations.routeObjects&&extra.locations.routeObjects.length>0">
                 <div>
-                  <div class="bw-method-label">Objetos de Rota</div>
+                  <div class="bw-method-label"><i class="fa-solid fa-tree"></i> Objetos de Rota</div>
                   <div style="display:flex;flex-direction:column;gap:5px">
                     <template x-for="loc in extra.locations.routeObjects" :key="loc.id">
                       <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--row);border-radius:8px;font-size:13px;flex-wrap:wrap">
-                        <template x-if="loc.route_objects && loc.route_objects.forum_url">
-                          <a :href="loc.route_objects.forum_url" target="_blank" rel="noopener"
-                            style="font-weight:600;color:var(--color);text-decoration:none"
-                            x-text="loc.route_objects && loc.route_objects.name"></a>
+                        <template x-if="loc.route_objects&&loc.route_objects.forum_url">
+                          <a :href="loc.route_objects.forum_url" target="_blank" rel="noopener" style="font-weight:600;color:var(--color);text-decoration:none" x-text="loc.route_objects&&loc.route_objects.name"></a>
                         </template>
-                        <template x-if="!loc.route_objects || !loc.route_objects.forum_url">
-                          <span style="font-weight:600" x-text="loc.route_objects && loc.route_objects.name"></span>
-                        </template>
+                        <template x-if="!loc.route_objects||!loc.route_objects.forum_url"><span style="font-weight:600" x-text="loc.route_objects&&loc.route_objects.name"></span></template>
                         <span style="font-size:11px;opacity:.6" x-text="formatSeasons(loc.seasons)"></span>
-                        <template x-if="loc.time_of_day">
-                          <span style="font-size:11px;opacity:.6" x-text="formatTime(loc.time_of_day)"></span>
-                        </template>
+                        <template x-if="loc.time_of_day"><span style="font-size:11px;opacity:.6" x-text="formatTime(loc.time_of_day)"></span></template>
                       </div>
+                    </template>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </template>
+
+          <!-- Itens que dropa -->
+          <template x-if="extra&&extra.drops&&hasDrops(extra.drops)">
+            <div class="bw-msect">
+              <div class="bw-msect-title">Itens que dropa / produz</div>
+              <template x-if="extra.drops.held&&extra.drops.held.length>0">
+                <div style="margin-bottom:8px">
+                  <div class="bw-method-label"><i class="fa-solid fa-hand-holding"></i> Itens carregados</div>
+                  <div class="bw-poke-list">
+                    <template x-for="(h,i) in extra.drops.held" :key="i">
+                      <button class="bw-poke-chip" @click="openItemById(h.items&&h.items.id)">
+                        <span x-text="h.items&&h.items.name"></span>
+                        <template x-if="h.roll"><span class="bw-poke-chip-lvl" x-text="h.roll"></span></template>
+                      </button>
+                    </template>
+                  </div>
+                </div>
+              </template>
+              <template x-if="extra.drops.produced&&extra.drops.produced.length>0">
+                <div>
+                  <div class="bw-method-label"><i class="fa-solid fa-seedling"></i> Itens produzidos</div>
+                  <div class="bw-poke-list">
+                    <template x-for="(pr,i) in extra.drops.produced" :key="i">
+                      <button class="bw-poke-chip" @click="openItemById(pr.items&&pr.items.id)">
+                        <span x-text="pr.items&&pr.items.name"></span>
+                        <template x-if="pr.tempo"><span class="bw-poke-chip-lvl" x-text="pr.tempo"></span></template>
+                      </button>
                     </template>
                   </div>
                 </div>
@@ -223,11 +199,11 @@
           </template>
 
           <!-- Dex entries -->
-          <template x-if="data.dex_entries && data.dex_entries.length > 0">
+          <template x-if="data.dex_entries&&data.dex_entries.length>0">
             <div class="bw-msect">
               <div class="bw-msect-title">Entradas da Pokédex</div>
               <div class="bw-dex">
-                <template x-for="(entry, i) in data.dex_entries" :key="i">
+                <template x-for="(entry,i) in data.dex_entries" :key="i">
                   <div class="bw-dex-entry" x-text="entry"></div>
                 </template>
               </div>
@@ -235,28 +211,30 @@
           </template>
 
           <!-- Moves -->
-          <template x-if="extra && extra.moves && extra.moves.length > 0">
+          <template x-if="extra&&extra.moves&&extra.moves.length>0">
             <div class="bw-msect">
               <div class="bw-msect-title">Moves aprendidos</div>
               <template x-for="group in groupedMoves(extra.moves)" :key="group.method">
-                <div style="margin-bottom:10px">
+                <div style="margin-bottom:12px">
                   <div class="bw-method-label" x-text="methodLabel(group.method)"></div>
-                  <template x-if="group.method === 'level-up'">
+                  <!-- Level: tabela com coluna de nível -->
+                  <template x-if="group.method==='level'">
                     <table class="bw-mtable">
                       <thead><tr><th>Nível</th><th>Nome</th></tr></thead>
                       <tbody>
-                        <template x-for="(mv, i) in group.moves" :key="i">
+                        <template x-for="(mv,i) in group.moves" :key="i">
                           <tr>
-                            <td x-text="mv.level || '—'" style="width:60px;opacity:.65"></td>
+                            <td x-text="mv.level||'—'" style="width:60px;opacity:.65"></td>
                             <td><button class="bw-mlink" @click="openMoveByName(mv.move_name)" x-text="mv.move_name"></button></td>
                           </tr>
                         </template>
                       </tbody>
                     </table>
                   </template>
-                  <template x-if="group.method !== 'level-up'">
+                  <!-- Outros: chips -->
+                  <template x-if="group.method!=='level'">
                     <div class="bw-poke-list">
-                      <template x-for="(mv, i) in group.moves" :key="i">
+                      <template x-for="(mv,i) in group.moves" :key="i">
                         <button class="bw-poke-chip" @click="openMoveByName(mv.move_name)" x-text="mv.move_name"></button>
                       </template>
                     </div>
@@ -265,22 +243,18 @@
               </template>
             </div>
           </template>
-
         </div>
         </template>
 
         <!-- ── ITEM ────────────────────────────────────────── -->
-        <template x-if="type === 'item' && !loading && data">
+        <template x-if="type==='item'&&!loading&&data">
         <div class="bw-mbody">
-
-          <template x-if="itemSprites(data).length > 0">
+          <template x-if="extra&&itemSprites(data).length>0">
             <div class="bw-carousel">
-              <div class="bw-carousel-frame">
-                <img :src="itemSprites(data)[carouselIdx]" :alt="data.name">
-              </div>
-              <div class="bw-carousel-dots" x-show="itemSprites(data).length > 1">
-                <template x-for="(_, di) in itemSprites(data)" :key="di">
-                  <div class="bw-dot" :class="{ active: carouselIdx === di }" @click="carouselIdx = di"></div>
+              <div class="bw-carousel-frame"><img :src="itemSprites(data)[carouselIdx]" :alt="data.name"></div>
+              <div class="bw-carousel-dots" x-show="itemSprites(data).length>1">
+                <template x-for="(_,di) in itemSprites(data)" :key="di">
+                  <div class="bw-dot" :class="{active:carouselIdx===di}" @click="carouselIdx=di"></div>
                 </template>
               </div>
             </div>
@@ -289,60 +263,79 @@
           <div class="bw-msect">
             <div class="bw-msect-title">Preço</div>
             <div class="bw-ival" style="font-size:15px;font-weight:700;color:var(--color)"
-              x-text="data.price != null ? ('₽\u202f' + data.price.toLocaleString('pt-BR')) : 'Sem preço definido'"></div>
+              x-text="data.price!=null?('₽\u202f'+data.price.toLocaleString('pt-BR')):'Sem preço definido'"></div>
           </div>
 
           <template x-if="data.description">
+            <div class="bw-msect"><div class="bw-msect-title">Descrição</div><div class="bw-prose" x-html="data.description"></div></div>
+          </template>
+
+          <!-- Dropado / Produzido por Pokémon -->
+          <template x-if="extra&&extra.droppedBy&&hasDroppedBy(extra.droppedBy)">
             <div class="bw-msect">
-              <div class="bw-msect-title">Descrição</div>
-              <div class="bw-prose" x-html="data.description"></div>
+              <div class="bw-msect-title">Obtido de Pokémon</div>
+              <template x-if="extra.droppedBy.held&&extra.droppedBy.held.length>0">
+                <div style="margin-bottom:8px">
+                  <div class="bw-method-label"><i class="fa-solid fa-hand-holding"></i> Carregado por</div>
+                  <div class="bw-poke-list">
+                    <template x-for="(h,i) in extra.droppedBy.held" :key="i">
+                      <button class="bw-poke-chip" @click="openPokemonById(h.pokemon&&h.pokemon.id)">
+                        <span x-text="h.pokemon&&h.pokemon.name"></span>
+                        <template x-if="h.roll"><span class="bw-poke-chip-lvl" x-text="h.roll"></span></template>
+                      </button>
+                    </template>
+                  </div>
+                </div>
+              </template>
+              <template x-if="extra.droppedBy.produced&&extra.droppedBy.produced.length>0">
+                <div>
+                  <div class="bw-method-label"><i class="fa-solid fa-seedling"></i> Produzido por</div>
+                  <div class="bw-poke-list">
+                    <template x-for="(pr,i) in extra.droppedBy.produced" :key="i">
+                      <button class="bw-poke-chip" @click="openPokemonById(pr.pokemon&&pr.pokemon.id)">
+                        <span x-text="pr.pokemon&&pr.pokemon.name"></span>
+                        <template x-if="pr.tempo"><span class="bw-poke-chip-lvl" x-text="pr.tempo"></span></template>
+                      </button>
+                    </template>
+                  </div>
+                </div>
+              </template>
             </div>
           </template>
 
           <!-- Como obter: Objetos de Rota -->
-          <template x-if="extra && extra.sources && extra.sources.routeObjects && extra.sources.routeObjects.length > 0">
+          <template x-if="extra&&extra.sources&&extra.sources.routeObjects&&extra.sources.routeObjects.length>0">
             <div class="bw-msect">
               <div class="bw-msect-title">Como obter — Objetos de Rota</div>
               <div style="display:flex;flex-direction:column;gap:5px">
                 <template x-for="src in extra.sources.routeObjects" :key="src.id">
                   <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--row);border-radius:8px;font-size:13px;flex-wrap:wrap">
-                    <template x-if="src.route_objects && src.route_objects.forum_url">
-                      <a :href="src.route_objects.forum_url" target="_blank" rel="noopener"
-                        style="font-weight:600;color:var(--color);text-decoration:none"
-                        x-text="src.route_objects && src.route_objects.name"></a>
+                    <template x-if="src.route_objects&&src.route_objects.forum_url">
+                      <a :href="src.route_objects.forum_url" target="_blank" rel="noopener" style="font-weight:600;color:var(--color);text-decoration:none" x-text="src.route_objects&&src.route_objects.name"></a>
                     </template>
-                    <template x-if="!src.route_objects || !src.route_objects.forum_url">
-                      <span style="font-weight:600" x-text="src.route_objects && src.route_objects.name"></span>
-                    </template>
+                    <template x-if="!src.route_objects||!src.route_objects.forum_url"><span style="font-weight:600" x-text="src.route_objects&&src.route_objects.name"></span></template>
                     <span style="font-size:11px;opacity:.6" x-text="formatSeasons(src.seasons)"></span>
-                    <template x-if="src.time_of_day">
-                      <span style="font-size:11px;opacity:.6" x-text="formatTime(src.time_of_day)"></span>
-                    </template>
+                    <template x-if="src.time_of_day"><span style="font-size:11px;opacity:.6" x-text="formatTime(src.time_of_day)"></span></template>
                   </div>
                 </template>
               </div>
             </div>
           </template>
 
-          <!-- Como obter: NPCs/Quests -->
-          <template x-if="extra && extra.sources && extra.sources.quests && extra.sources.quests.length > 0">
+          <!-- Como obter: Quests -->
+          <template x-if="extra&&extra.sources&&extra.sources.quests&&extra.sources.quests.length>0">
             <div class="bw-msect">
               <div class="bw-msect-title">Como obter — Recompensa de Quest</div>
               <div style="display:flex;flex-direction:column;gap:5px">
                 <template x-for="q in extra.sources.quests" :key="q.id">
                   <div style="padding:7px 10px;background:var(--row);border-radius:8px;font-size:13px">
-                    <div style="font-weight:600" x-text="q.npc_quests && q.npc_quests.name"></div>
-                    <template x-if="q.npc_quests && q.npc_quests.npcs">
-                      <div style="font-size:11px;opacity:.6;margin-top:2px">
-                        NPC:
+                    <div style="font-weight:600" x-text="q.npc_quests&&q.npc_quests.name"></div>
+                    <template x-if="q.npc_quests&&q.npc_quests.npcs">
+                      <div style="font-size:11px;opacity:.6;margin-top:2px">NPC:
                         <template x-if="q.npc_quests.npcs.forum_url">
-                          <a :href="q.npc_quests.npcs.forum_url" target="_blank" rel="noopener"
-                            style="color:var(--color);text-decoration:none;font-weight:600"
-                            x-text="q.npc_quests.npcs.name"></a>
+                          <a :href="q.npc_quests.npcs.forum_url" target="_blank" rel="noopener" style="color:var(--color);font-weight:600;text-decoration:none" x-text="q.npc_quests.npcs.name"></a>
                         </template>
-                        <template x-if="!q.npc_quests.npcs.forum_url">
-                          <span x-text="q.npc_quests.npcs.name"></span>
-                        </template>
+                        <template x-if="!q.npc_quests.npcs.forum_url"><span x-text="q.npc_quests.npcs.name"></span></template>
                       </div>
                     </template>
                   </div>
@@ -352,30 +345,23 @@
           </template>
 
           <!-- Craft -->
-          <template x-if="extra && extra.crafting">
+          <template x-if="extra&&extra.crafting">
             <div class="bw-msect">
-              <div class="bw-msect-title">Receita de craft</div>
+              <div class="bw-msect-title"><i class="fa-solid fa-hammer"></i> Receita de craft</div>
               <div class="bw-igrid" style="margin-bottom:8px">
-                <template x-if="extra.crafting.craft_skill">
-                  <div class="bw-irow"><span class="bw-ikey">Habilidade</span><span class="bw-ival" x-text="extra.crafting.craft_skill"></span></div>
-                </template>
-                <div class="bw-irow"><span class="bw-ikey">Resultado</span>
-                  <span class="bw-ival" x-text="(extra.crafting.result_quantity || 1) + ' unidade(s)'"></span></div>
+                <template x-if="extra.crafting.craft_skill"><div class="bw-irow"><span class="bw-ikey">Habilidade</span><span class="bw-ival" x-text="extra.crafting.craft_skill"></span></div></template>
+                <div class="bw-irow"><span class="bw-ikey">Resultado</span><span class="bw-ival" x-text="(extra.crafting.result_quantity||1)+' unidade(s)'"></span></div>
               </div>
               <div class="bw-craft-slots">
-                <template x-for="(slot, si) in (extra.crafting.crafting_slots || [])" :key="si">
+                <template x-for="(slot,si) in (extra.crafting.crafting_slots||[])" :key="si">
                   <div class="bw-craft-slot">
-                    <span class="bw-craft-qty" x-text="slot.quantity + '×'"></span>
+                    <span class="bw-craft-qty" x-text="slot.quantity+'×'"></span>
                     <div class="bw-craft-opts">
-                      <template x-for="(opt, oi) in slot.crafting_slot_options" :key="oi">
+                      <template x-for="(opt,oi) in slot.crafting_slot_options" :key="oi">
                         <span>
-                          <template x-if="oi > 0"><span class="bw-craft-sep">ou</span></template>
-                          <template x-if="slotOptionLabel(opt).itemId">
-                            <button class="bw-mlink" @click="openItemById(slotOptionLabel(opt).itemId)" x-text="slotOptionLabel(opt).text"></button>
-                          </template>
-                          <template x-if="!slotOptionLabel(opt).itemId">
-                            <span x-text="slotOptionLabel(opt).text"></span>
-                          </template>
+                          <template x-if="oi>0"><span class="bw-craft-sep">ou</span></template>
+                          <template x-if="slotOptionLabel(opt).itemId"><button class="bw-mlink" @click="openItemById(slotOptionLabel(opt).itemId)" x-text="slotOptionLabel(opt).text"></button></template>
+                          <template x-if="!slotOptionLabel(opt).itemId"><span x-text="slotOptionLabel(opt).text"></span></template>
                         </span>
                       </template>
                     </div>
@@ -386,16 +372,12 @@
           </template>
 
           <!-- Berry -->
-          <template x-if="extra && extra.berry">
+          <template x-if="extra&&extra.berry">
             <div class="bw-msect">
-              <div class="bw-msect-title">Dados de Berry</div>
+              <div class="bw-msect-title"><i class="fa-solid fa-leaf"></i> Dados de Berry</div>
               <div class="bw-igrid" style="margin-bottom:10px">
-                <template x-if="extra.berry.rarity">
-                  <div class="bw-irow"><span class="bw-ikey">Raridade</span><span class="bw-ival" x-text="extra.berry.rarity"></span></div>
-                </template>
-                <template x-if="extra.berry.seasons && extra.berry.seasons.length">
-                  <div class="bw-irow"><span class="bw-ikey">Temporadas</span><span class="bw-ival" x-text="extra.berry.seasons.join(', ')"></span></div>
-                </template>
+                <template x-if="extra.berry.rarity"><div class="bw-irow"><span class="bw-ikey">Raridade</span><span class="bw-ival" x-text="extra.berry.rarity"></span></div></template>
+                <template x-if="extra.berry.seasons&&extra.berry.seasons.length"><div class="bw-irow"><span class="bw-ikey">Temporadas</span><span class="bw-ival" x-text="extra.berry.seasons.join(', ')"></span></div></template>
               </div>
               <div class="bw-msect-title" style="margin-bottom:6px">Flavors</div>
               <div class="bw-flavors">
@@ -409,42 +391,28 @@
               </div>
             </div>
           </template>
-
         </div>
         </template>
 
         <!-- ── MOVE ────────────────────────────────────────── -->
-        <template x-if="type === 'move' && !loading && data">
+        <template x-if="type==='move'&&!loading&&data">
         <div class="bw-mbody">
           <div class="bw-move-stats">
-            <template x-if="data.power != null">
-              <div class="bw-move-stat-cell"><span class="bw-move-stat-lbl">Poder</span><span class="bw-move-stat-val" x-text="data.power"></span></div>
-            </template>
-            <template x-if="data.accuracy != null">
-              <div class="bw-move-stat-cell"><span class="bw-move-stat-lbl">Precisão</span><span class="bw-move-stat-val" x-text="data.accuracy + '%'"></span></div>
-            </template>
-            <template x-if="data.pp != null">
-              <div class="bw-move-stat-cell"><span class="bw-move-stat-lbl">PP</span><span class="bw-move-stat-val" x-text="data.pp"></span></div>
-            </template>
-            <div class="bw-move-stat-cell"><span class="bw-move-stat-lbl">Prioridade</span>
-              <span class="bw-move-stat-val" x-text="(data.priority || 0) > 0 ? '+' + data.priority : (data.priority || 0)"></span></div>
+            <template x-if="data.power!=null"><div class="bw-move-stat-cell"><span class="bw-move-stat-lbl">Poder</span><span class="bw-move-stat-val" x-text="data.power"></span></div></template>
+            <template x-if="data.accuracy!=null"><div class="bw-move-stat-cell"><span class="bw-move-stat-lbl">Precisão</span><span class="bw-move-stat-val" x-text="data.accuracy+'%'"></span></div></template>
+            <template x-if="data.pp!=null"><div class="bw-move-stat-cell"><span class="bw-move-stat-lbl">PP</span><span class="bw-move-stat-val" x-text="data.pp"></span></div></template>
+            <div class="bw-move-stat-cell"><span class="bw-move-stat-lbl">Prioridade</span><span class="bw-move-stat-val" x-text="(data.priority||0)>0?'+'+data.priority:(data.priority||0)"></span></div>
           </div>
-          <template x-if="data.description">
-            <div class="bw-msect"><div class="bw-msect-title">Descrição</div><div class="bw-prose" x-text="data.description"></div></div>
-          </template>
-          <template x-if="data.contest_points">
-            <div class="bw-msect"><div class="bw-msect-title">Contest Points</div><div class="bw-ival" x-text="data.contest_points"></div></div>
-          </template>
-          <template x-if="extra && extra.learnedBy && extra.learnedBy.length > 0">
+          <template x-if="data.description"><div class="bw-msect"><div class="bw-msect-title">Descrição</div><div class="bw-prose" x-text="data.description"></div></div></template>
+          <template x-if="data.contest_points"><div class="bw-msect"><div class="bw-msect-title">Contest Points</div><div class="bw-ival" x-text="data.contest_points"></div></div></template>
+          <template x-if="extra&&extra.learnedBy&&extra.learnedBy.length>0">
             <div class="bw-msect">
               <div class="bw-msect-title">Aprendido por</div>
               <div class="bw-poke-list">
-                <template x-for="(pm, i) in extra.learnedBy" :key="i">
-                  <button class="bw-poke-chip" @click="openPokemonById(pm.pokemon_id)">
-                    <span x-text="pm.pokemon && pm.pokemon.name || ('Pokémon #' + pm.pokemon_id)"></span>
-                    <template x-if="pm.learn_method === 'level-up' && pm.level">
-                      <span class="bw-poke-chip-lvl" x-text="'Nv.' + pm.level"></span>
-                    </template>
+                <template x-for="(pm,i) in extra.learnedBy" :key="i">
+                  <button class="bw-poke-chip" @click="openPokemonById(pm.pokemon&&pm.pokemon.id)">
+                    <span x-text="pm.pokemon&&pm.pokemon.name||('Pokémon #'+pm.pokemon_id)"></span>
+                    <template x-if="pm.learn_method==='level'&&pm.level"><span class="bw-poke-chip-lvl" x-text="'Nv.'+pm.level"></span></template>
                   </button>
                 </template>
               </div>
@@ -454,48 +422,44 @@
         </template>
 
         <!-- ── ABILITY ─────────────────────────────────────── -->
-        <template x-if="type === 'ability' && !loading && data">
+        <template x-if="type==='ability'&&!loading&&data">
         <div class="bw-mbody">
-          <template x-if="data.description">
-            <div class="bw-msect"><div class="bw-msect-title">Descrição</div><div class="bw-prose" x-text="data.description"></div></div>
-          </template>
-          <template x-if="data.out_of_battle_effect">
-            <div class="bw-msect"><div class="bw-msect-title">Efeito fora de batalha</div><div class="bw-prose" x-html="data.out_of_battle_effect"></div></div>
+          <template x-if="data.description"><div class="bw-msect"><div class="bw-msect-title">Descrição</div><div class="bw-prose" x-text="data.description"></div></div></template>
+          <template x-if="data.out_of_battle_effect"><div class="bw-msect"><div class="bw-msect-title"><i class="fa-solid fa-star" style="font-size:11px"></i> Efeito fora de batalha</div><div class="bw-prose" x-html="data.out_of_battle_effect"></div></div></template>
+          <template x-if="extra&&extra.pokemon&&extra.pokemon.length>0">
+            <div class="bw-msect">
+              <div class="bw-msect-title">Pokémon com esta habilidade</div>
+              <div class="bw-poke-list">
+                <template x-for="(ab,i) in extra.pokemon" :key="i">
+                  <button class="bw-poke-chip" @click="openPokemonById(ab.pokemon&&ab.pokemon.id)">
+                    <span x-text="ab.pokemon&&ab.pokemon.name"></span>
+                    <span class="bw-poke-chip-lvl" style="text-transform:capitalize" x-text="ab.slot"></span>
+                  </button>
+                </template>
+              </div>
+            </div>
           </template>
         </div>
         </template>
 
-      </div><!-- .bw-modal -->
-    </div><!-- .bw-overlay -->
-  </div><!-- modal x-data -->
+      </div>
+    </div>
+  </div>
 
-</div><!-- #bulbawiki -->
+</div>
 
 <script>
-// Ativa a tab correta no nav de acordo com a rota atual
 function _setActiveTab(hash) {
-  const path = (hash || '').replace(/^#/, '')
-  document.querySelectorAll('.bw-tab').forEach(function(btn) { btn.classList.remove('active') })
-  if (path.startsWith('/pokemon'))   document.getElementById('tab-pokemon')   && document.getElementById('tab-pokemon').classList.add('active')
-  else if (path.startsWith('/moves'))     document.getElementById('tab-moves')     && document.getElementById('tab-moves').classList.add('active')
-  else if (path.startsWith('/abilities')) document.getElementById('tab-abilities') && document.getElementById('tab-abilities').classList.add('active')
-  else if (path.startsWith('/items'))     document.getElementById('tab-items')     && document.getElementById('tab-items').classList.add('active')
-  else if (path.startsWith('/ficha'))     document.getElementById('tab-ficha')     && document.getElementById('tab-ficha').classList.add('active')
+  const path = (hash||'').replace(/^#/,'')
+  document.querySelectorAll('.bw-tab').forEach(function(b){ b.classList.remove('active') })
+  const map = { '/pokemon':'tab-pokemon', '/moves':'tab-moves', '/abilities':'tab-abilities', '/items':'tab-items' }
+  for (const prefix in map) {
+    if (path.startsWith(prefix)) { const el=document.getElementById(map[prefix]); if(el)el.classList.add('active'); break }
+  }
 }
-
-// Registrar rotas adicionais
-Object.assign(ROUTES, { '/ficha': 'pages/ficha.html' })
-
-// Override navigate para ativar tab
-const _origNavigate = navigate
-window.navigate = async function(hash, ps) {
-  _setActiveTab(hash)
-  return _origNavigate(hash, ps)
-}
-window.addEventListener('hashchange', function() { _setActiveTab(window.location.hash) })
-
-// Inicia o router após Alpine estar pronto
-document.addEventListener('alpine:init', function() {
+window.addEventListener('hashchange', function(){ _setActiveTab(window.location.hash) })
+document.addEventListener('alpine:init', function(){
+  _setActiveTab(window.location.hash)
   setTimeout(initRouter, 0)
 })
 </script>
