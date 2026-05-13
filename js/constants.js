@@ -1,0 +1,73 @@
+// ============================================================
+// BulbaWiki — constants.js
+// Constantes compartilhadas entre api.js, app.js e ficha.js
+// ============================================================
+
+const TYPE_COLORS = {
+  normal:   { bg: '#f0f0e8', text: '#5a5a3a', border: '#d0d0b0' },
+  fire:     { bg: '#fdf0e8', text: '#8a3a10', border: '#f0c0a0' },
+  water:    { bg: '#e8f0fd', text: '#1a3a8a', border: '#a0c0f0' },
+  electric: { bg: '#fff8d0', text: '#7a6a10', border: '#e8d880' },
+  grass:    { bg: '#e8f5e0', text: '#3a6a20', border: '#c0e0a0' },
+  ice:      { bg: '#e8f8fd', text: '#1a6a7a', border: '#a0e0f0' },
+  fighting: { bg: '#fde8e8', text: '#8a1a1a', border: '#f0a0a0' },
+  poison:   { bg: '#f0e8f5', text: '#6a2a7a', border: '#d0b0e0' },
+  ground:   { bg: '#f5f0e0', text: '#6a5a1a', border: '#e0d0a0' },
+  flying:   { bg: '#eaf0fd', text: '#2a4a8a', border: '#b0c8f0' },
+  psychic:  { bg: '#fde8f0', text: '#8a1a4a', border: '#f0a0c0' },
+  bug:      { bg: '#eef5e0', text: '#3a5a10', border: '#b8d890' },
+  rock:     { bg: '#f0ede0', text: '#5a4a20', border: '#d0c890' },
+  ghost:    { bg: '#ece8f5', text: '#3a1a5a', border: '#c0a8e0' },
+  dragon:   { bg: '#e8e8fd', text: '#1a1a8a', border: '#a0a0f0' },
+  dark:     { bg: '#ece8f0', text: '#2a1a3a', border: '#b8a8d0' },
+  steel:    { bg: '#eeeef5', text: '#3a3a5a', border: '#c0c0d8' },
+  fairy:    { bg: '#fde8f5', text: '#8a1a6a', border: '#f0a0d8' },
+}
+
+// Hex sólido por tipo (para stripes e backgrounds de card)
+const TYPE_HEX = {
+  normal:'#a8a878',  fire:'#f08030',    water:'#6890f0',   electric:'#f8d030',
+  grass:'#78c850',   ice:'#98d8d8',     fighting:'#c03028', poison:'#a040a0',
+  ground:'#e0c068',  flying:'#a890f0',  psychic:'#f85888',  bug:'#a8b820',
+  rock:'#b8a038',    ghost:'#705898',   dragon:'#7038f8',   dark:'#705848',
+  steel:'#b8b8d0',   fairy:'#ee99ac',
+}
+
+const STATUS_LABELS = {
+  canonical: 'Padrão',
+  modified:  'Modificado para o RPG',
+  original:  'Original do RPG',
+}
+
+const STATUS_COLORS = {
+  canonical: { bg: '#e8f5e0', text: '#3a6a20' },
+  modified:  { bg: '#fff8d0', text: '#7a6a10' },
+  original:  { bg: '#f0e8f5', text: '#6a2a7a' },
+}
+
+const CATEGORY_LABELS = {
+  physical: 'Físico',
+  special:  'Especial',
+  status:   'Status',
+}
+
+const METHOD_LABELS = {
+  'level-up':  'Por Nível',
+  'machine':   'Por MT',
+  'egg':       'Por Ovo',
+  'learnable': 'Aprendível',
+  'initial':   'Inicial',
+  'evo':       'Por Evolução',
+  'contest':   'Contest',
+}
+
+const STAT_META = [
+  { key: 'hp',         label: 'HP',     color: '#4caf50' },
+  { key: 'attack',     label: 'ATK',    color: '#f44336' },
+  { key: 'defense',    label: 'DEF',    color: '#ff9800' },
+  { key: 'sp_attack',  label: 'SP.ATK', color: '#2196f3' },
+  { key: 'sp_defense', label: 'SP.DEF', color: '#00bcd4' },
+  { key: 'speed',      label: 'VEL',    color: '#e91e8c' },
+]
+
+const PER_PAGE = 12
