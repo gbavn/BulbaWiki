@@ -5,1413 +5,249 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BulbaWiki</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/wiki.css">
 <script>
-// Suppress opaque cross-origin CDN errors (no filename = third-party script)
 window.onerror = function(msg, src) {
-  if (!src || src === '?' || src === 'about:blank') return true;
-  return false;
-};
+  if (!src || src === '?' || src === 'about:blank') return true
+  return false
+}
 window.addEventListener('unhandledrejection', function(e) {
-  // Suppress Supabase/Alpine internal promise rejections in sandboxed preview
-  if (!e.reason?.stack || e.reason?.stack?.includes('alpinejs') || e.reason?.stack?.includes('supabase')) {
-    e.preventDefault();
-  }
-});
+  if (!e.reason?.stack || e.reason?.stack?.includes('alpinejs')) e.preventDefault()
+})
 </script>
-<script>
-// ============================================================
-// BulbaWiki — API Layer (PostgREST fetch — sem Supabase SDK)
-// ============================================================
-
-const SUPABASE_URL      = 'https://qyvsrbewliqplnmljxck.supabase.co'
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF5dnNyYmV3bGlxcGxubWxqeGNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxODY1MzcsImV4cCI6MjA4OTc2MjUzN30.VEKGHrEKE762PuObbkeanTl_okis_X2SAEtGE4JFbso'
-
-const _cache = {}
-const _HEADERS = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'Accept': 'application/json' }
-
-async function _pgFetch(path) {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, { headers: _HEADERS })
-  if (!res.ok) { console.warn('[BwAPI]', path, res.status); return [] }
-  return res.json()
-}
-
-// Fetch all rows with automatic pagination (1000/page)
-async function _all(table, select = '*', order = 'id') {
-  if (_cache[table]) return _cache[table]
-  const PAGE = 1000
-  let rows = [], offset = 0, done = false
-  while (!done) {
-    const qs = `select=${encodeURIComponent(select)}&order=${order}&limit=${PAGE}&offset=${offset}`
-    const page = await _pgFetch(`${table}?${qs}`)
-    rows = rows.concat(page)
-    done = page.length < PAGE
-    offset += PAGE
-  }
-  _cache[table] = rows
-  return rows
-}
-
-const BwAPI = {
-
-  // ── Pokémon ──────────────────────────────────────────────
-  async loadPokemon() {
-    return _all('pokemon', '*', 'id')
-  },
-
-  async loadPokemonMoves(pokemonId) {
-    const key = `pm_${pokemonId}`
-    if (_cache[key]) return _cache[key]
-    const data = await _pgFetch(`pokemon_moves?select=*&pokemon_id=eq.${pokemonId}&order=level.asc.nullslast`)
-    _cache[key] = data
-    return data
-  },
-
-  // ── Items ─────────────────────────────────────────────────
-  async loadItemCategories() {
-    return _all('item_categories', '*', 'name')
-  },
-
-  async loadItems() {
-    if (_cache['_items_full']) return _cache['_items_full']
-    const [items, categories, crafting, berries] = await Promise.all([
-      _all('items', '*', 'id'),
-      BwAPI.loadItemCategories(),
-      _all('item_crafting', 'item_id', 'item_id'),
-      _all('berry_details', 'item_id', 'item_id'),
-    ])
-    const catMap   = Object.fromEntries(categories.map(c => [c.id, c.name]))
-    const craftSet = new Set(crafting.map(c => c.item_id))
-    const berrySet = new Set(berries.map(b => b.item_id))
-    const result   = items.map(item => ({
-      ...item,
-      category_name: catMap[item.category_id] ?? null,
-      is_craftable:  craftSet.has(item.id),
-      is_berry:      berrySet.has(item.id),
-    }))
-    _cache['_items_full'] = result
-    return result
-  },
-
-  async loadItemCrafting(itemId) {
-    const key = `craft_${itemId}`
-    if (_cache[key] !== undefined) return _cache[key]
-    // Fetch crafting record + nested slots + slot options
-    const recs = await _pgFetch(
-      `item_crafting?select=*,crafting_slots(*,crafting_slot_options(*))&item_id=eq.${itemId}`
-    )
-    const rec = recs?.[0] ?? null
-    if (rec?.crafting_slots) rec.crafting_slots.sort((a, b) => a.slot_order - b.slot_order)
-    _cache[key] = rec
-    return rec
-  },
-
-  async loadBerryDetails(itemId) {
-    const key = `berry_${itemId}`
-    if (_cache[key] !== undefined) return _cache[key]
-    const recs = await _pgFetch(`berry_details?select=*&item_id=eq.${itemId}&limit=1`)
-    _cache[key] = recs?.[0] ?? null
-    return _cache[key]
-  },
-
-  getItemById(id) {
-    return (_cache['_items_full'] ?? []).find(i => i.id == id) ?? null
-  },
-
-  getCategoryById(id) {
-    return (_cache['item_categories'] ?? []).find(c => c.id == id) ?? null
-  },
-
-  // ── Moves ─────────────────────────────────────────────────
-  async loadMoves() {
-    return _all('moves', '*', 'name')
-  },
-
-  async loadMoveLearnedBy(moveName) {
-    const key = `mlb_${encodeURIComponent(moveName)}`
-    if (_cache[key]) return _cache[key]
-    const data = await _pgFetch(
-      `pokemon_moves?select=*,pokemon(id,name)&move_name=eq.${encodeURIComponent(moveName)}&order=pokemon_id`
-    )
-    _cache[key] = data
-    return data
-  },
-
-  // ── Abilities ─────────────────────────────────────────────
-  async loadAbilities() {
-    return _all('abilities', '*', 'name')
-  },
-}
-
-</script>
-<script>
-// ============================================================
-// BulbaWiki — Alpine.js App Component
-// ============================================================
-
-const TYPE_COLORS = {
-  normal:   { bg: '#f0f0e8', text: '#5a5a3a', border: '#d0d0b0' },
-  fire:     { bg: '#fdf0e8', text: '#8a3a10', border: '#f0c0a0' },
-  water:    { bg: '#e8f0fd', text: '#1a3a8a', border: '#a0c0f0' },
-  electric: { bg: '#fff8d0', text: '#7a6a10', border: '#e8d880' },
-  grass:    { bg: '#e8f5e0', text: '#3a6a20', border: '#c0e0a0' },
-  ice:      { bg: '#e8f8fd', text: '#1a6a7a', border: '#a0e0f0' },
-  fighting: { bg: '#fde8e8', text: '#8a1a1a', border: '#f0a0a0' },
-  poison:   { bg: '#f0e8f5', text: '#6a2a7a', border: '#d0b0e0' },
-  ground:   { bg: '#f5f0e0', text: '#6a5a1a', border: '#e0d0a0' },
-  flying:   { bg: '#eaf0fd', text: '#2a4a8a', border: '#b0c8f0' },
-  psychic:  { bg: '#fde8f0', text: '#8a1a4a', border: '#f0a0c0' },
-  bug:      { bg: '#eef5e0', text: '#3a5a10', border: '#b8d890' },
-  rock:     { bg: '#f0ede0', text: '#5a4a20', border: '#d0c890' },
-  ghost:    { bg: '#ece8f5', text: '#3a1a5a', border: '#c0a8e0' },
-  dragon:   { bg: '#e8e8fd', text: '#1a1a8a', border: '#a0a0f0' },
-  dark:     { bg: '#ece8f0', text: '#2a1a3a', border: '#b8a8d0' },
-  steel:    { bg: '#eeeef5', text: '#3a3a5a', border: '#c0c0d8' },
-  fairy:    { bg: '#fde8f5', text: '#8a1a6a', border: '#f0a0d8' },
-}
-
-const STATUS_LABELS = {
-  canonical: 'Padrão',
-  modified:  'Modificado para o RPG',
-  original:  'Original do RPG',
-}
-const STATUS_COLORS = {
-  canonical: { bg: '#e8f5e0', text: '#3a6a20' },
-  modified:  { bg: '#fff8d0', text: '#7a6a10' },
-  original:  { bg: '#f0e8f5', text: '#6a2a7a' },
-}
-const CATEGORY_LABELS = { physical: 'Físico', special: 'Especial', status: 'Status' }
-const METHOD_LABELS   = { 'level-up': 'Por Nível', 'machine': 'Por MT' }
-const STAT_META = [
-  { key: 'hp',        label: 'HP',      color: '#4caf50' },
-  { key: 'attack',    label: 'ATK',     color: '#f44336' },
-  { key: 'defense',   label: 'DEF',     color: '#ff9800' },
-  { key: 'sp_attack', label: 'SP.ATK',  color: '#2196f3' },
-  { key: 'sp_defense',label: 'SP.DEF',  color: '#00bcd4' },
-  { key: 'speed',     label: 'VEL',     color: '#e91e8c' },
-]
-const PER_PAGE = 12
-
-function bulbaWiki() {
-  return {
-
-    // ── Tabs ────────────────────────────────────────────────
-    activeTab: 'pokemon',
-    tabs: [
-      { id: 'pokemon',   label: 'Pokémon' },
-      { id: 'items',     label: 'Itens' },
-      { id: 'moves',     label: 'Moves' },
-      { id: 'abilities', label: 'Habilidades' },
-    ],
-
-    // ── Data stores ─────────────────────────────────────────
-    stores: {
-      pokemon:   { data: [], filtered: [], page: 1, loaded: false, loading: false },
-      items:     { data: [], filtered: [], page: 1, loaded: false, loading: false },
-      moves:     { data: [], filtered: [], page: 1, loaded: false, loading: false },
-      abilities: { data: [], filtered: [], page: 1, loaded: false, loading: false },
-    },
-
-    // ── Filters ─────────────────────────────────────────────
-    fPokemon:   { search: '', type1: '', type2: '', eggGroup: '', canBreed: false, hasArtwork: false },
-    fItems:     { search: '', category: '', hasSprite: false, hasPrice: false, isCraftable: false, isBerry: false, priceMin: 0, priceMax: 100000 },
-    fMoves:     { search: '', type: '', category: '', status: '', hasContest: false, hasOutEffect: false, powerMin: 0, powerMax: 250 },
-    fAbilities: { search: '', status: '', hasOutEffect: false },
-
-    // ── Filter option lists ──────────────────────────────────
-    allTypes:       Object.keys(TYPE_COLORS),
-    allEggGroups:   [],
-    allCategories:  [], // item_categories
-
-    // ── Modal ────────────────────────────────────────────────
-    modal: { open: false, type: null, data: null, extra: null, loading: false },
-    modalHistory: [],
-    activeArtwork: 'normal',
-    carouselIdx: 0,
-    copiedUrl: false,
-    filtersOpen: false,
-    filterModalOpen: false,
-
-    // ── Init ─────────────────────────────────────────────────
-    async init() {
-      await this.switchTab('pokemon')
-      this._handleHash()
-      window.addEventListener('hashchange', () => this._handleHash())
-    },
-
-    // ── Tab loading ──────────────────────────────────────────
-    async switchTab(tab) {
-      this.activeTab = tab
-      this.filtersOpen = false
-      const s = this.stores[tab]
-      if (s.loaded) return
-      s.loading = true
-      try {
-        if (tab === 'pokemon') {
-          s.data = await BwAPI.loadPokemon()
-          this.allEggGroups = [...new Set(
-            s.data.flatMap(p => [p.egg_group1, p.egg_group2]).filter(Boolean)
-          )].sort()
-        } else if (tab === 'items') {
-          s.data = await BwAPI.loadItems()
-          this.allCategories = await BwAPI.loadItemCategories()
-        } else if (tab === 'moves') {
-          s.data = await BwAPI.loadMoves()
-        } else if (tab === 'abilities') {
-          s.data = await BwAPI.loadAbilities()
-        }
-        s.loaded = true
-        this.applyFilters(tab)
-      } catch (e) {
-        console.error('[BwWiki] loadTab', e)
-      } finally {
-        s.loading = false
-      }
-    },
-
-    // ── Filters ──────────────────────────────────────────────
-    applyFilters(tab) {
-      const s = this.stores[tab]
-      let d = s.data
-
-      if (tab === 'pokemon') {
-        const f = this.fPokemon, q = f.search.toLowerCase().trim()
-        d = d.filter(p =>
-          (!q || p.name.toLowerCase().includes(q)) &&
-          (!f.type1 || p.type1?.toLowerCase() === f.type1) &&
-          (!f.type2 || p.type2?.toLowerCase() === f.type2) &&
-          (!f.eggGroup || p.egg_group1 === f.eggGroup || p.egg_group2 === f.eggGroup) &&
-          (!f.canBreed || p.can_breed) &&
-          (!f.hasArtwork || p.artwork_normal)
-        )
-      } else if (tab === 'items') {
-        const f = this.fItems, q = f.search.toLowerCase().trim()
-        d = d.filter(i =>
-          (!q || i.name.toLowerCase().includes(q)) &&
-          (!f.category || String(i.category_id) === f.category) &&
-          (!f.hasSprite  || (i.sprites?.length > 0)) &&
-          (!f.hasPrice   || i.price != null) &&
-          (!f.isCraftable|| i.is_craftable) &&
-          (!f.isBerry    || i.is_berry) &&
-          (i.price == null || (i.price >= f.priceMin && i.price <= f.priceMax))
-        )
-      } else if (tab === 'moves') {
-        const f = this.fMoves, q = f.search.toLowerCase().trim()
-        d = d.filter(m =>
-          (!q || m.name.toLowerCase().includes(q)) &&
-          (!f.type     || m.type?.toLowerCase() === f.type) &&
-          (!f.category || m.category === f.category) &&
-          (!f.status   || m.status === f.status) &&
-          (!f.hasContest   || m.contest_points) &&
-          (!f.hasOutEffect || m.out_of_battle_effect) &&
-          (m.power == null || (m.power >= f.powerMin && m.power <= f.powerMax))
-        )
-      } else if (tab === 'abilities') {
-        const f = this.fAbilities, q = f.search.toLowerCase().trim()
-        d = d.filter(a =>
-          (!q || a.name.toLowerCase().includes(q)) &&
-          (!f.status      || a.status === f.status) &&
-          (!f.hasOutEffect|| a.out_of_battle_effect)
-        )
-      }
-
-      s.filtered = d
-      s.page = 1
-    },
-
-    clearFilters(tab) {
-      if (tab === 'pokemon')   this.fPokemon   = { search:'', type1:'', type2:'', eggGroup:'', canBreed:false, hasArtwork:false }
-      if (tab === 'items')     this.fItems     = { search:'', category:'', hasSprite:false, hasPrice:false, isCraftable:false, isBerry:false, priceMin:0, priceMax:100000 }
-      if (tab === 'moves')     this.fMoves     = { search:'', type:'', category:'', status:'', hasContest:false, hasOutEffect:false, powerMin:0, powerMax:250 }
-      if (tab === 'abilities') this.fAbilities = { search:'', status:'', hasOutEffect:false }
-      this.applyFilters(tab)
-    },
-
-    get activeFiltersCount() {
-      const tab = this.activeTab
-      if (tab === 'pokemon') {
-        const f = this.fPokemon
-        return [f.search,f.type1,f.type2,f.eggGroup,f.canBreed,f.hasArtwork].filter(Boolean).length
-      }
-      if (tab === 'items') {
-        const f = this.fItems
-        return [f.search,f.category,f.hasSprite,f.hasPrice,f.isCraftable,f.isBerry].filter(Boolean).length
-      }
-      if (tab === 'moves') {
-        const f = this.fMoves
-        return [f.search,f.type,f.category,f.status,f.hasContest,f.hasOutEffect].filter(Boolean).length
-      }
-      if (tab === 'abilities') {
-        const f = this.fAbilities
-        return [f.search,f.status,f.hasOutEffect].filter(Boolean).length
-      }
-      return 0
-    },
-
-    // ── Pagination ───────────────────────────────────────────
-    get curStore() { return this.stores[this.activeTab] },
-
-    get pagedItems() {
-      const s = this.curStore
-      const start = (s.page - 1) * PER_PAGE
-      return s.filtered.slice(start, start + PER_PAGE)
-    },
-
-    get totalPages() {
-      return Math.max(1, Math.ceil(this.curStore.filtered.length / PER_PAGE))
-    },
-
-    get paginationPages() {
-      const total = this.totalPages, cur = this.curStore.page
-      if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
-      const set = new Set([1, 2, cur - 1, cur, cur + 1, total - 1, total].filter(p => p >= 1 && p <= total))
-      const sorted = [...set].sort((a, b) => a - b)
-      const pages = []
-      for (let i = 0; i < sorted.length; i++) {
-        if (i > 0 && sorted[i] - sorted[i - 1] > 1) pages.push('…')
-        pages.push(sorted[i])
-      }
-      return pages
-    },
-
-    goToPage(p) {
-      if (p < 1 || p > this.totalPages) return
-      this.curStore.page = p
-    },
-
-    jumpPage(e) {
-      const v = parseInt(e.target.value)
-      e.target.value = ''
-      if (!isNaN(v)) this.goToPage(v)
-    },
-
-    // ── Modal open/close ─────────────────────────────────────
-    async openModal(type, data, push = true) {
-      if (push && this.modal.open) {
-        this.modalHistory.push({ type: this.modal.type, data: this.modal.data })
-      }
-      this.activeArtwork = 'normal'
-      this.carouselIdx   = 0
-      this.modal = { open: true, type, data, extra: null, loading: true }
-      window.location.hash = `${type}-${data.id}`
-
-      try {
-        if (type === 'pokemon') {
-          const moves = await BwAPI.loadPokemonMoves(data.id)
-          this.modal.extra = { moves }
-        } else if (type === 'item') {
-          const [crafting, berry] = await Promise.all([
-            data.is_craftable ? BwAPI.loadItemCrafting(data.id) : null,
-            data.is_berry     ? BwAPI.loadBerryDetails(data.id) : null,
-          ])
-          this.modal.extra = { crafting, berry }
-        } else if (type === 'move') {
-          const learnedBy = await BwAPI.loadMoveLearnedBy(data.name)
-          this.modal.extra = { learnedBy }
-        } else {
-          this.modal.extra = {}
-        }
-      } catch (e) {
-        console.error('[BwWiki] openModal extra', e)
-        this.modal.extra = {}
-      } finally {
-        this.modal.loading = false
-      }
-    },
-
-    closeModal() {
-      this.modal = { open: false, type: null, data: null, extra: null, loading: false }
-      this.modalHistory = []
-      history.pushState('', document.title, window.location.pathname + window.location.search)
-    },
-
-    goBack() {
-      const prev = this.modalHistory.pop()
-      if (prev) this.openModal(prev.type, prev.data, false)
-      else this.closeModal()
-    },
-
-    // ── Cross-modal navigation ───────────────────────────────
-    async openMoveByName(name) {
-      if (!this.stores.moves.loaded) await this.switchTab('moves')
-      const m = this.stores.moves.data.find(x => x.name === name)
-      if (m) this.openModal('move', m)
-    },
-
-    async openPokemonById(id) {
-      if (!this.stores.pokemon.loaded) await this.switchTab('pokemon')
-      const p = this.stores.pokemon.data.find(x => x.id == id)
-      if (p) this.openModal('pokemon', p)
-    },
-
-    async openItemById(id) {
-      if (!this.stores.items.loaded) await this.switchTab('items')
-      const i = this.stores.items.data.find(x => x.id == id)
-      if (i) this.openModal('item', i)
-    },
-
-    async copyUrl() {
-      await navigator.clipboard.writeText(window.location.href)
-      this.copiedUrl = true
-      setTimeout(() => { this.copiedUrl = false }, 1500)
-    },
-
-    async _handleHash() {
-      const hash = window.location.hash.slice(1)
-      if (!hash) return
-      const dash = hash.lastIndexOf('-')
-      if (dash < 0) return
-      const type  = hash.slice(0, dash)
-      const id    = parseInt(hash.slice(dash + 1))
-      if (isNaN(id)) return
-      const tabMap = { pokemon: 'pokemon', item: 'items', move: 'moves', ability: 'abilities' }
-      const tab = tabMap[type]
-      if (!tab) return
-      await this.switchTab(tab)
-      const item = this.stores[tab].data.find(d => d.id == id)
-      if (item) {
-        this.activeTab = tab
-        this.openModal(type, item, false)
-      }
-    },
-
-    // ── Formatting helpers ───────────────────────────────────
-    typeBadgeStyle(type) {
-      const c = TYPE_COLORS[type?.toLowerCase()] || { bg: '#eee', text: '#555', border: '#ccc' }
-      return `background:${c.bg};color:${c.text};border-color:${c.border}`
-    },
-    typeHex(type) {
-      const map = {
-        normal:'#a8a878',fire:'#f08030',water:'#6890f0',electric:'#f8d030',
-        grass:'#78c850',ice:'#98d8d8',fighting:'#c03028',poison:'#a040a0',
-        ground:'#e0c068',flying:'#a890f0',psychic:'#f85888',bug:'#a8b820',
-        rock:'#b8a038',ghost:'#705898',dragon:'#7038f8',dark:'#705848',
-        steel:'#b8b8d0',fairy:'#ee99ac'
-      }
-      return map[type?.toLowerCase()] || '#aaa'
-    },
-    statusBadgeStyle(status) {
-      const c = STATUS_COLORS[status] || STATUS_COLORS.canonical
-      return `background:${c.bg};color:${c.text}`
-    },
-    statusLabel(s) { return STATUS_LABELS[s] || s },
-    catLabel(c)    { return CATEGORY_LABELS[c] || c },
-    methodLabel(m) { return METHOD_LABELS[m] || m },
-
-    fmtPrice(p) {
-      if (p == null) return null
-      return '₽\u202f' + p.toLocaleString('pt-BR')
-    },
-    fmtHeight(cm) {
-      if (cm == null) return null
-      return (cm / 100).toFixed(1).replace('.', ',') + ' m'
-    },
-    fmtWeight(hg) {
-      if (hg == null) return null
-      return (hg / 10).toFixed(1).replace('.', ',') + ' kg'
-    },
-    fmtGender(male, female) {
-      if (male == null && female == null) return 'Sem gênero'
-      return `♂ ${male}% / ♀ ${female}%`
-    },
-    pokemonId(id) {
-      return '#' + String(id).padStart(4, '0')
-    },
-
-    statRows(p) {
-      if (!p) return []
-      return STAT_META.map(s => ({ ...s, val: p[s.key] ?? 0 }))
-    },
-    statTotal(p) {
-      if (!p) return 0
-      return STAT_META.reduce((sum, s) => sum + (p[s.key] ?? 0), 0)
-    },
-    statBarPct(val) {
-      return Math.min(100, Math.round((val / 255) * 100)) + '%'
-    },
-
-    artworkUrl(p) {
-      if (!p) return null
-      if (this.activeArtwork === 'shadow' && p.artwork_shadow) return p.artwork_shadow
-      if (this.activeArtwork === 'aura'   && p.artwork_aura)   return p.artwork_aura
-      return p.artwork_normal
-    },
-
-    groupedMoves(moves) {
-      const order = ['level-up', 'machine']
-      const map = {}
-      for (const m of moves) {
-        const k = m.learn_method || 'other'
-        if (!map[k]) map[k] = []
-        map[k].push(m)
-      }
-      if (map['level-up']) map['level-up'].sort((a, b) => (a.level ?? 999) - (b.level ?? 999))
-      // Return in preferred order, then remaining
-      const keys = [...new Set([...order, ...Object.keys(map)])]
-      return keys.filter(k => map[k]).map(k => ({ method: k, moves: map[k] }))
-    },
-
-    itemSprites(item) {
-      if (!item?.sprites) return []
-      return Array.isArray(item.sprites) ? item.sprites.filter(Boolean) : []
-    },
-
-    slotOptionLabel(opt) {
-      if (opt.item_id) {
-        const item = BwAPI.getItemById(opt.item_id)
-        return { text: item?.name ?? `Item #${opt.item_id}`, itemId: opt.item_id }
-      }
-      if (opt.category_id) {
-        const cat = BwAPI.getCategoryById(opt.category_id)
-        return { text: `Qualquer item de: ${cat?.name ?? `Cat. #${opt.category_id}`}`, itemId: null }
-      }
-      if (opt.tag) {
-        return { text: `Qualquer ${opt.tag_type || 'tag'}: ${opt.tag}`, itemId: null }
-      }
-      return { text: '—', itemId: null }
-    },
-
-    berryFlavors(berry) {
-      if (!berry) return []
-      return [
-        { label: 'Beauty',  val: berry.flavor_beauty  ?? 0 },
-        { label: 'Clever',  val: berry.flavor_clever  ?? 0 },
-        { label: 'Cool',    val: berry.flavor_cool    ?? 0 },
-        { label: 'Cute',    val: berry.flavor_cute    ?? 0 },
-        { label: 'Tough',   val: berry.flavor_tough   ?? 0 },
-      ]
-    },
-  }
-}
-
-</script>
+<script src="js/constants.js"></script>
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+<script src="js/ficha.js"></script>
 <script defer src="https://unpkg.com/alpinejs@3.14.1/dist/cdn.min.js"></script>
-<style>
-/* ── FORUM VARIABLES (tema claro padrão) ─────────────────── */
-:root {
-  --color:     #479047;
-  --color2:    #8BC34A;
-  --wrap:      #eeeeee;
-  --row:       #e0e0e0;
-  --forums:    #eaeaea;
-  --border:    2px solid #fff;
-  --border2:   2px solid var(--color);
-  --colortext: #222;
-  --shadow:    0px 0px 30px #888;
-}
-.tema-escuro {
-  --color:     #6e336e;
-  --color2:    #7e9fd0;
-  --wrap:      #111;
-  --row:       #191919;
-  --forums:    #161616;
-  --border:    2px solid #272727;
-  --border2:   2px solid var(--color);
-  --colortext: #eeeeee;
-  --shadow:    0px 0px 30px #222;
-}
-
-/* ── RESET ───────────────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-button { font-family: inherit; cursor: pointer; }
-a { text-decoration: none; }
-
-/* ── WRAPPER ─────────────────────────────────────────────── */
-#bulbawiki {
-  font-family: 'Inter', sans-serif;
-  color: var(--colortext);
-  background: var(--wrap);
-  min-height: 420px;
-  padding: 14px 12px;
-  max-width: 960px;
-}
-
-/* ── TABS ────────────────────────────────────────────────── */
-.bw-tabs {
-  display: flex;
-  gap: 2px;
-  border-bottom: 2px solid var(--row);
-  margin-bottom: 14px;
-}
-.bw-tab {
-  padding: 7px 18px;
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -2px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--colortext);
-  opacity: 0.6;
-  transition: opacity .15s, border-color .15s, color .15s;
-  border-radius: 6px 6px 0 0;
-}
-.bw-tab:hover { opacity: 1; background: var(--row); }
-.bw-tab.active { opacity: 1; color: var(--color); border-bottom-color: var(--color); font-weight: 600; }
-
-/* ── FILTERS ─────────────────────────────────────────────── */
-.bw-filters {
-  background: var(--row);
-  border-radius: 10px;
-  padding: 10px 12px;
-  margin-bottom: 14px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: flex-end;
-}
-.bw-fg { display: flex; flex-direction: column; gap: 3px; }
-.bw-fl {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .06em;
-  opacity: .5;
-}
-.bw-input, .bw-select {
-  height: 32px;
-  padding: 0 10px;
-  border: var(--border);
-  background: var(--wrap);
-  color: var(--colortext);
-  border-radius: 6px;
-  font-family: inherit;
-  font-size: 13px;
-  outline: none;
-  transition: border .15s;
-}
-.bw-input:focus, .bw-select:focus { border: 2px solid var(--color); }
-.bw-input { min-width: 150px; }
-.bw-select { min-width: 110px; }
-.bw-select option { background: var(--wrap); color: var(--colortext); }
-.bw-toggle {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  height: 32px;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  user-select: none;
-  white-space: nowrap;
-}
-.bw-toggle input { accent-color: var(--color); width: 14px; height: 14px; }
-.bw-range-wrap { display: flex; flex-direction: column; gap: 3px; min-width: 130px; }
-.bw-range { accent-color: var(--color); width: 100%; }
-.bw-range-val { font-size: 11px; opacity: .6; }
-.bw-btn-clear {
-  height: 32px;
-  padding: 0 12px;
-  background: none;
-  border: var(--border);
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--colortext);
-  opacity: .55;
-  transition: opacity .15s, background .15s;
-  white-space: nowrap;
-}
-.bw-btn-clear:hover { opacity: 1; background: var(--forums); }
-
-/* ── RESULTS BAR ─────────────────────────────────────────── */
-.bw-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
-  font-size: 12px;
-  opacity: .6;
-}
-
-/* ── GRIDS ───────────────────────────────────────────────── */
-.bw-grid-pokemon {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 10px;
-  margin-bottom: 18px;
-}
-.bw-grid-wide {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 10px;
-  margin-bottom: 18px;
-}
-
-/* ── POKEMON CARD ────────────────────────────────────────── */
-.bw-pcard {
-  background: var(--row);
-  border-radius: 10px;
-  border: var(--border);
-  overflow: hidden;
-  cursor: pointer;
-  transition: transform .15s, box-shadow .15s;
-}
-.bw-pcard:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,.15); }
-.bw-pcard-img {
-  background: var(--forums);
-  aspect-ratio: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 10px;
-}
-.bw-pcard-img img { width: 90%; height: 90%; object-fit: contain; image-rendering: pixelated; }
-.bw-pcard-ph {
-  width: 72px; height: 72px;
-  border-radius: 50%;
-  background: var(--wrap);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 28px; opacity: .18;
-}
-.bw-pcard-body { padding: 8px 10px 10px; }
-.bw-pcard-num { font-size: 10px; font-weight: 600; opacity: .45; margin-bottom: 1px; }
-.bw-pcard-name { font-size: 13px; font-weight: 600; margin-bottom: 5px; }
-
-/* ── ITEM CARD ───────────────────────────────────────────── */
-.bw-icard {
-  background: var(--row);
-  border-radius: 10px;
-  border: var(--border);
-  overflow: hidden;
-  cursor: pointer;
-  transition: transform .15s, box-shadow .15s;
-  display: flex;
-  flex-direction: column;
-}
-.bw-icard:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,.15); }
-.bw-icard-img {
-  background: var(--forums);
-  height: 72px;
-  display: flex; align-items: center; justify-content: center;
-}
-.bw-icard-img img { max-width: 56px; max-height: 56px; object-fit: contain; image-rendering: pixelated; }
-.bw-icard-img-ph { font-size: 28px; opacity: .2; }
-.bw-icard-body { padding: 8px 10px 10px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
-.bw-icard-name { font-size: 13px; font-weight: 600; }
-.bw-icard-cat  { font-size: 11px; opacity: .55; }
-.bw-icard-price{ font-size: 12px; font-weight: 600; color: var(--color); }
-
-/* ── TITLE ───────────────────────────────────────────────── */
-.bw-title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 16px;
-}
-.bw-title-text {
-  font-size: 22px;
-  font-weight: 800;
-  color: var(--color);
-  letter-spacing: -.02em;
-}
-.bw-title-dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: var(--color2);
-  flex-shrink: 0;
-}
-
-/* ── FILTER TOGGLE BUTTON ─────────────────────────────────── */
-.bw-filter-toggle {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  height: 32px;
-  padding: 0 14px;
-  background: var(--row);
-  border: var(--border);
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--colortext);
-  margin-bottom: 10px;
-  transition: background .15s, border-color .15s;
-}
-.bw-filter-toggle:hover { background: var(--forums); }
-.bw-filter-toggle.has-filters { border-color: var(--color); color: var(--color); }
-.bw-filter-badge {
-  background: var(--color);
-  color: #fff;
-  border-radius: 20px;
-  font-size: 10px;
-  font-weight: 700;
-  padding: 1px 6px;
-  line-height: 1.6;
-}
-.bw-filter-arrow { font-size: 10px; opacity: .6; transition: transform .2s; }
-.bw-filter-arrow.open { transform: rotate(180deg); }
-
-/* ── ITEM CARD HORIZONTAL ────────────────────────────────── */
-.bw-icard {
-  background: var(--row);
-  border-radius: 10px;
-  border: var(--border);
-  cursor: pointer;
-  transition: transform .15s, box-shadow .15s;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 12px 8px 8px;
-}
-.bw-icard:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,.15); }
-.bw-icard-img {
-  width: 52px; height: 52px; flex-shrink: 0;
-  background: var(--forums);
-  border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-}
-.bw-icard-img img { max-width: 42px; max-height: 42px; object-fit: contain; image-rendering: pixelated; }
-.bw-icard-img-ph { font-size: 22px; opacity: .2; }
-.bw-icard-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-.bw-icard-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.bw-icard-cat  { font-size: 11px; opacity: .55; }
-.bw-icard-price{ font-size: 12px; font-weight: 600; color: var(--color); }
-
-/* ── MOVE CARD COM COR ───────────────────────────────────── */
-.bw-mcard {
-  border-radius: 10px;
-  border: var(--border);
-  padding: 10px 12px;
-  cursor: pointer;
-  transition: transform .15s, box-shadow .15s;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  position: relative;
-  overflow: hidden;
-}
-.bw-mcard::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  opacity: .08;
-  background: var(--mcard-color, transparent);
-  pointer-events: none;
-}
-.bw-mcard:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,.15); }
-.bw-mcard-stripe {
-  position: absolute;
-  left: 0; top: 0; bottom: 0;
-  width: 4px;
-  background: var(--mcard-color, var(--color));
-  border-radius: 10px 0 0 10px;
-}
-.bw-mcard-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; padding-left: 8px; }
-.bw-mcard-name { font-size: 13px; font-weight: 600; }
-.bw-mcard-badges { display: flex; gap: 4px; flex-wrap: wrap; }
-.bw-mcard-meta { padding-left: 8px; }
-.bw-mcard-desc { font-size: 11px; opacity: .6; padding-left: 8px;
-  overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-
-/* ── BADGES ──────────────────────────────────────────────── */
-.bw-badge {
-  display: inline-block;
-  padding: 1px 8px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 600;
-  border: 1px solid transparent;
-  text-transform: capitalize;
-  white-space: nowrap;
-}
-.bw-badge-status {
-  display: inline-block;
-  padding: 1px 8px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-/* ── PAGINATION ──────────────────────────────────────────── */
-.bw-pager { display: flex; align-items: center; justify-content: center; gap: 4px; flex-wrap: wrap; }
-.bw-pager-btn {
-  min-width: 32px; height: 32px; padding: 0 8px;
-  background: var(--row); border: var(--border); border-radius: 6px;
-  font-size: 13px; color: var(--colortext);
-  transition: background .15s, color .15s, border-color .15s;
-  display: flex; align-items: center; justify-content: center;
-}
-.bw-pager-btn:hover:not(:disabled):not(.active) { background: var(--forums); }
-.bw-pager-btn.active { background: var(--color); color: #fff; border-color: var(--color); font-weight: 700; }
-.bw-pager-btn:disabled { opacity: .3; cursor: default; }
-.bw-pager-ellipsis { min-width: 28px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 13px; opacity: .4; }
-.bw-pager-input {
-  width: 46px; height: 32px; text-align: center;
-  border: var(--border); background: var(--wrap); color: var(--colortext);
-  border-radius: 6px; font-family: inherit; font-size: 13px; outline: none;
-}
-.bw-pager-input:focus { border: 2px solid var(--color); }
-
-/* ── LOADING / EMPTY ─────────────────────────────────────── */
-.bw-state {
-  text-align: center; padding: 60px 20px;
-  font-size: 14px; opacity: .45;
-  grid-column: 1/-1;
-}
-.bw-spinner {
-  width: 34px; height: 34px;
-  border: 3px solid var(--row);
-  border-top-color: var(--color);
-  border-radius: 50%;
-  animation: bw-spin .7s linear infinite;
-  margin: 0 auto 12px;
-}
-@keyframes bw-spin { to { transform: rotate(360deg); } }
-
-/* ── MODAL ───────────────────────────────────────────────── */
-.bw-overlay {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,.55);
-  z-index: 9999;
-  display: flex; align-items: center; justify-content: center;
-  padding: 16px;
-  backdrop-filter: blur(3px);
-}
-.bw-modal {
-  background: var(--wrap);
-  border-radius: 14px;
-  width: 100%; max-width: 600px;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: var(--shadow);
-  display: flex; flex-direction: column;
-}
-.bw-modal::-webkit-scrollbar { width: 4px; }
-.bw-modal::-webkit-scrollbar-thumb { background: var(--row); border-radius: 4px; }
-.bw-mhead {
-  position: sticky; top: 0;
-  background: var(--wrap);
-  border-bottom: var(--border);
-  padding: 14px 18px 12px;
-  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
-  z-index: 1;
-}
-.bw-mhead-left { display: flex; flex-direction: column; gap: 5px; }
-.bw-mhead-title { font-size: 19px; font-weight: 700; }
-.bw-mhead-sub { font-size: 12px; opacity: .5; }
-.bw-mhead-badges { display: flex; gap: 4px; flex-wrap: wrap; }
-.bw-mbtns { display: flex; gap: 5px; flex-shrink: 0; }
-.bw-mbtn {
-  width: 32px; height: 32px;
-  border: var(--border); border-radius: 8px;
-  background: var(--row);
-  color: var(--colortext);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 15px; transition: background .15s, color .15s;
-}
-.bw-mbtn:hover { background: var(--color); color: #fff; border-color: var(--color); }
-.bw-mbtn.copied { background: #4caf50; color: #fff; border-color: #4caf50; }
-.bw-mbody { padding: 18px; display: flex; flex-direction: column; gap: 18px; }
-
-/* Modal sections */
-.bw-msect { display: flex; flex-direction: column; gap: 10px; }
-.bw-msect-title {
-  font-size: 11px; font-weight: 700;
-  text-transform: uppercase; letter-spacing: .07em; opacity: .45;
-}
-
-/* Artwork */
-.bw-artwork {
-  background: var(--forums);
-  border-radius: 10px;
-  padding: 16px;
-  display: flex; flex-direction: column; align-items: center; gap: 10px;
-}
-.bw-artwork img { width: 148px; height: 148px; object-fit: contain; image-rendering: pixelated; }
-.bw-artwork-ph { width: 148px; height: 148px; display: flex; align-items: center; justify-content: center; font-size: 60px; opacity: .15; }
-.bw-artwork-tog { display: flex; gap: 6px; }
-.bw-atbtn {
-  padding: 3px 12px;
-  border: var(--border2); border-radius: 20px;
-  background: none; color: var(--color);
-  font-size: 12px; font-weight: 600;
-  transition: background .15s, color .15s;
-}
-.bw-atbtn.active, .bw-atbtn:hover { background: var(--color); color: #fff; }
-
-/* Info grid */
-.bw-igrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; }
-.bw-irow { display: flex; flex-direction: column; gap: 1px; }
-.bw-ikey { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; opacity: .45; }
-.bw-ival { font-size: 13px; font-weight: 500; }
-
-/* Stats */
-.bw-stats { display: flex; flex-direction: column; gap: 7px; }
-.bw-srow { display: flex; align-items: center; gap: 8px; }
-.bw-slbl { width: 68px; font-size: 11px; font-weight: 600; opacity: .6; flex-shrink: 0; }
-.bw-strack { flex: 1; background: var(--row); border-radius: 20px; height: 7px; overflow: hidden; }
-.bw-sbar { height: 100%; border-radius: 20px; transition: width .5s ease; }
-.bw-sval { width: 32px; text-align: right; font-size: 12px; font-weight: 600; }
-.bw-stotal { display: flex; align-items: center; gap: 8px; padding-top: 4px; border-top: 1px solid var(--row); }
-.bw-stlbl { width: 68px; font-size: 11px; font-weight: 700; opacity: .6; flex-shrink: 0; }
-.bw-stval { font-size: 13px; font-weight: 700; }
-
-/* Dex entries */
-.bw-dex { display: flex; flex-direction: column; gap: 6px; }
-.bw-dex-entry {
-  font-size: 13px; line-height: 1.65;
-  padding: 8px 12px;
-  background: var(--row); border-radius: 8px;
-  border-left: 3px solid var(--color);
-}
-
-/* Move table */
-.bw-mtable { width: 100%; border-collapse: collapse; font-size: 13px; }
-.bw-mtable th {
-  text-align: left; padding: 5px 8px;
-  font-size: 10px; font-weight: 700;
-  text-transform: uppercase; letter-spacing: .05em; opacity: .45;
-  border-bottom: var(--border);
-}
-.bw-mtable td { padding: 5px 8px; border-bottom: 1px solid var(--row); }
-.bw-mtable tr:last-child td { border-bottom: none; }
-.bw-mlink {
-  color: var(--color); font-weight: 600; cursor: pointer;
-  background: none; border: none; font-family: inherit; font-size: inherit;
-  text-align: left; padding: 0;
-}
-.bw-mlink:hover { text-decoration: underline; }
-.bw-method-label {
-  font-size: 10px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .05em; opacity: .5; padding: 8px 8px 4px;
-}
-
-/* Carousel */
-.bw-carousel { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-.bw-carousel-frame {
-  width: 96px; height: 96px;
-  background: var(--forums); border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-}
-.bw-carousel-frame img { max-width: 80px; max-height: 80px; object-fit: contain; image-rendering: pixelated; }
-.bw-carousel-dots { display: flex; gap: 5px; }
-.bw-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--row); cursor: pointer; transition: background .15s; }
-.bw-dot.active { background: var(--color); }
-
-/* Berry flavors */
-.bw-flavors { display: flex; flex-direction: column; gap: 5px; }
-.bw-flavor-row { display: flex; align-items: center; gap: 8px; }
-.bw-flavor-lbl { font-size: 12px; width: 52px; opacity: .7; }
-.bw-flavor-track { flex: 1; background: var(--row); border-radius: 20px; height: 6px; overflow: hidden; }
-.bw-flavor-fill { height: 100%; border-radius: 20px; background: var(--color2); }
-
-/* Craft slots */
-.bw-craft-slots { display: flex; flex-direction: column; gap: 6px; }
-.bw-craft-slot {
-  display: flex; align-items: center; gap: 8px;
-  padding: 7px 10px; background: var(--row); border-radius: 8px; font-size: 13px;
-}
-.bw-craft-qty { font-weight: 700; color: var(--color); min-width: 20px; }
-.bw-craft-opts { display: flex; flex-wrap: wrap; gap: 4px; }
-.bw-craft-sep { opacity: .4; font-size: 11px; }
-
-/* ── ABILITY CARD ────────────────────────────────────────── */
-.bw-lcard {
-  background: var(--row);
-  border-radius: 10px;
-  border: var(--border);
-  padding: 10px 12px;
-  cursor: pointer;
-  transition: transform .15s, box-shadow .15s;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.bw-lcard:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,.15); }
-.bw-lcard-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
-.bw-lcard-name { font-size: 13px; font-weight: 600; }
-.bw-lcard-desc { font-size: 11px; opacity: .6; overflow: hidden;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-
-[x-cloak] { display: none !important; }
-.bw-prose { font-size: 13px; line-height: 1.7; }
-.bw-prose p { margin-bottom: 6px; }
-.bw-prose p:last-child { margin-bottom: 0; }
-.bw-prose strong { font-weight: 600; }
-.bw-prose em { font-style: italic; }
-.bw-prose ul, .bw-prose ol { padding-left: 18px; margin-bottom: 6px; }
-.bw-prose li { margin-bottom: 2px; }
-
-/* Pokemon list in move/ability modal */
-.bw-poke-list { display: flex; flex-wrap: wrap; gap: 5px; }
-.bw-poke-chip {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 3px 10px; background: var(--row);
-  border-radius: 20px; font-size: 12px; font-weight: 500;
-  cursor: pointer; border: var(--border); transition: background .15s, color .15s;
-}
-.bw-poke-chip:hover { background: var(--color); color: #fff; }
-.bw-poke-chip-lvl { opacity: .55; font-size: 11px; }
-
-/* Spinner in modal */
-.bw-mloading { display: flex; align-items: center; justify-content: center; padding: 40px; }
-
-/* Move stats table */
-.bw-move-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-  gap: 1px;
-  background: var(--row);
-  border-radius: 10px;
-  overflow: hidden;
-}
-.bw-move-stat-cell {
-  background: var(--wrap);
-  padding: 8px 10px;
-  display: flex; flex-direction: column; gap: 2px; align-items: center; text-align: center;
-}
-.bw-move-stat-lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; opacity: .45; }
-.bw-move-stat-val { font-size: 14px; font-weight: 600; }
-</style>
 </head>
-
 <body>
 <div id="bulbawiki" x-data="bulbaWiki()" x-init="init()">
 
-  <!-- ── TÍTULO ──────────────────────────────────────────── -->
   <div class="bw-title">
     <div class="bw-title-dot"></div>
     <span class="bw-title-text">BulbaWiki</span>
   </div>
 
-  <!-- ── TABS ────────────────────────────────────────────── -->
   <nav class="bw-tabs">
     <template x-for="tab in tabs" :key="tab.id">
-      <button class="bw-tab"
-        :class="{ active: activeTab === tab.id }"
-        @click="switchTab(tab.id)"
-        x-text="tab.label">
-      </button>
+      <button class="bw-tab" :class="{ active: activeTab === tab.id }" @click="switchTab(tab.id)" x-text="tab.label"></button>
     </template>
   </nav>
 
-  <!-- ══════════════════════════════════════════════════════
-       FILTERS
-  ══════════════════════════════════════════════════════════ -->
+  <!-- ── FICHA TAB ──────────────────────────────────────── -->
+  <div x-show="activeTab === 'ficha'" x-data="fichaGenerator()">
+    <div class="bw-ficha-wrap">
+      <div class="bw-ficha-intro">
+        Monte seu time com até <strong>6 Pokémon</strong>, adicione os moves e gere o BBCode para colar no fórum.
+      </div>
+      <div class="bw-ficha-slots">
+        <template x-for="(slot, idx) in slots" :key="idx">
+          <div class="bw-ficha-slot">
+            <div class="bw-ficha-slot-num" x-text="`Slot ${idx + 1}`"></div>
+            <div class="bw-ficha-slot-preview">
+              <div class="bw-ficha-slot-img">
+                <template x-if="slot.pokemon?.artwork_normal">
+                  <img :src="slot.pokemon.artwork_normal" :alt="slot.pokemon.name">
+                </template>
+                <template x-if="!slot.pokemon?.artwork_normal">
+                  <span class="bw-ficha-slot-img-ph">◈</span>
+                </template>
+              </div>
+              <div class="bw-ficha-slot-info">
+                <template x-if="slot.pokemon">
+                  <div>
+                    <div class="bw-ficha-slot-name" x-text="slot.pokemon.name"></div>
+                    <div class="bw-ficha-slot-types">
+                      <template x-if="slot.pokemon.type1">
+                        <span class="bw-badge" :style="typeBadgeStyle(slot.pokemon.type1)" x-text="slot.pokemon.type1"></span>
+                      </template>
+                      <template x-if="slot.pokemon.type2">
+                        <span class="bw-badge" :style="typeBadgeStyle(slot.pokemon.type2)" x-text="slot.pokemon.type2"></span>
+                      </template>
+                    </div>
+                  </div>
+                </template>
+                <template x-if="!slot.pokemon">
+                  <span style="font-size:12px;opacity:.4">Nenhum selecionado</span>
+                </template>
+              </div>
+            </div>
+            <div class="bw-ficha-search">
+              <input type="search" placeholder="Buscar Pokémon…"
+                x-model="slot.searchQ" @input="searchSlot(idx)" @keydown.escape="slot.results = []">
+              <div class="bw-ficha-dropdown" x-show="slot.results.length > 0" @click.outside="slot.results = []">
+                <template x-for="p in slot.results" :key="p.id">
+                  <div class="bw-ficha-option" @click="selectPokemon(idx, p)">
+                    <span class="bw-ficha-option-num" x-text="dexNum(p)"></span>
+                    <template x-if="p.artwork_normal">
+                      <img :src="p.artwork_normal" :alt="p.name">
+                    </template>
+                    <span x-text="p.name"></span>
+                  </div>
+                </template>
+              </div>
+            </div>
+            <template x-if="slot.pokemon">
+              <div class="bw-ficha-moves">
+                <template x-for="(move, mi) in slot.moves" :key="mi">
+                  <div class="bw-ficha-move-row">
+                    <span class="bw-ficha-move-lbl" x-text="mi + 1 + '.'"></span>
+                    <input class="bw-ficha-move-input" type="text" placeholder="Nome do move…" x-model="slot.moves[mi]">
+                  </div>
+                </template>
+              </div>
+            </template>
+            <template x-if="slot.pokemon">
+              <button class="bw-ficha-slot-remove" @click="clearSlot(idx)">✕ Remover</button>
+            </template>
+          </div>
+        </template>
+      </div>
+      <div class="bw-ficha-actions">
+        <button class="bw-ficha-btn" @click="generateFicha()">⚡ Gerar BBCode</button>
+        <button class="bw-ficha-btn-ghost" @click="clearAll()">Limpar tudo</button>
+      </div>
+      <template x-if="output">
+        <div class="bw-ficha-output">
+          <div class="bw-ficha-output-label">BBCode gerado — copie e cole no fórum</div>
+          <textarea class="bw-ficha-textarea" readonly x-text="output"></textarea>
+          <button class="bw-ficha-copy-btn" :class="{ copied }" @click="copyOutput()"
+            x-text="copied ? '✓ Copiado!' : 'Copiar'"></button>
+        </div>
+      </template>
+    </div>
+  </div>
 
-  <!-- Botão filtros -->
-  <button class="bw-filter-toggle" :class="{ 'has-filters': activeFiltersCount > 0 }" @click="filtersOpen = !filtersOpen">
-    <span>⚙ Filtros</span>
-    <template x-if="activeFiltersCount > 0">
-      <span class="bw-filter-badge" x-text="activeFiltersCount"></span>
-    </template>
-    <span class="bw-filter-arrow" :class="{ open: filtersOpen }">▼</span>
-  </button>
+  <!-- ── FILTER TOGGLE ──────────────────────────────────── -->
+  <template x-if="activeTab !== 'ficha'">
+    <button class="bw-filter-toggle" :class="{ 'has-filters': activeFiltersCount > 0 }" @click="filtersOpen = !filtersOpen">
+      <span>⚙ Filtros</span>
+      <template x-if="activeFiltersCount > 0">
+        <span class="bw-filter-badge" x-text="activeFiltersCount"></span>
+      </template>
+      <span class="bw-filter-arrow" :class="{ open: filtersOpen }">▼</span>
+    </button>
+  </template>
 
   <!-- Pokémon filters -->
   <div class="bw-filters" x-show="activeTab === 'pokemon' && filtersOpen">
-    <div class="bw-fg">
-      <span class="bw-fl">Nome</span>
-      <input class="bw-input" type="search" placeholder="Buscar…"
-        x-model="fPokemon.search" @input="applyFilters('pokemon')">
-    </div>
-    <div class="bw-fg">
-      <span class="bw-fl">Tipo 1</span>
+    <div class="bw-fg"><span class="bw-fl">Nome</span>
+      <input class="bw-input" type="search" placeholder="Buscar…" x-model="fPokemon.search" @input="applyFilters('pokemon')"></div>
+    <div class="bw-fg"><span class="bw-fl">Tipo 1</span>
       <select class="bw-select" x-model="fPokemon.type1" @change="applyFilters('pokemon')">
         <option value="">Todos</option>
-        <template x-for="t in allTypes" :key="t">
-          <option :value="t" x-text="t.charAt(0).toUpperCase()+t.slice(1)"></option>
-        </template>
-      </select>
-    </div>
-    <div class="bw-fg">
-      <span class="bw-fl">Tipo 2</span>
+        <template x-for="t in allTypes" :key="t"><option :value="t" x-text="t.charAt(0).toUpperCase()+t.slice(1)"></option></template>
+      </select></div>
+    <div class="bw-fg"><span class="bw-fl">Tipo 2</span>
       <select class="bw-select" x-model="fPokemon.type2" @change="applyFilters('pokemon')">
         <option value="">Todos</option>
-        <template x-for="t in allTypes" :key="t">
-          <option :value="t" x-text="t.charAt(0).toUpperCase()+t.slice(1)"></option>
-        </template>
-      </select>
-    </div>
-    <div class="bw-fg">
-      <span class="bw-fl">Grupo de Ovo</span>
+        <template x-for="t in allTypes" :key="t"><option :value="t" x-text="t.charAt(0).toUpperCase()+t.slice(1)"></option></template>
+      </select></div>
+    <div class="bw-fg"><span class="bw-fl">Grupo de Ovo</span>
       <select class="bw-select" x-model="fPokemon.eggGroup" @change="applyFilters('pokemon')">
         <option value="">Todos</option>
-        <template x-for="g in allEggGroups" :key="g">
-          <option :value="g" x-text="g"></option>
-        </template>
-      </select>
-    </div>
-    <label class="bw-toggle">
-      <input type="checkbox" x-model="fPokemon.canBreed" @change="applyFilters('pokemon')">
-      Pode cruzar
-    </label>
-    <label class="bw-toggle">
-      <input type="checkbox" x-model="fPokemon.hasArtwork" @change="applyFilters('pokemon')">
-      Tem artwork
-    </label>
-    <button class="bw-btn-clear" x-show="activeFiltersCount > 0"
-      @click="clearFilters('pokemon')">Limpar filtros</button>
+        <template x-for="g in allEggGroups" :key="g"><option :value="g" x-text="g"></option></template>
+      </select></div>
+    <label class="bw-toggle"><input type="checkbox" x-model="fPokemon.canBreed" @change="applyFilters('pokemon')"> Pode cruzar</label>
+    <label class="bw-toggle"><input type="checkbox" x-model="fPokemon.hasArtwork" @change="applyFilters('pokemon')"> Tem artwork</label>
+    <button class="bw-btn-clear" x-show="activeFiltersCount > 0" @click="clearFilters('pokemon')">Limpar filtros</button>
   </div>
 
   <!-- Items filters -->
   <div class="bw-filters" x-show="activeTab === 'items' && filtersOpen">
-    <div class="bw-fg">
-      <span class="bw-fl">Nome</span>
-      <input class="bw-input" type="search" placeholder="Buscar…"
-        x-model="fItems.search" @input="applyFilters('items')">
-    </div>
-    <div class="bw-fg">
-      <span class="bw-fl">Categoria</span>
+    <div class="bw-fg"><span class="bw-fl">Nome</span>
+      <input class="bw-input" type="search" placeholder="Buscar…" x-model="fItems.search" @input="applyFilters('items')"></div>
+    <div class="bw-fg"><span class="bw-fl">Categoria</span>
       <select class="bw-select" x-model="fItems.category" @change="applyFilters('items')">
         <option value="">Todas</option>
-        <template x-for="cat in allCategories" :key="cat.id">
-          <option :value="String(cat.id)" x-text="cat.name"></option>
-        </template>
-      </select>
-    </div>
-    <div class="bw-fg">
-      <span class="bw-fl">Preço mín (₽)</span>
+        <template x-for="cat in allCategories" :key="cat.id"><option :value="String(cat.id)" x-text="cat.name"></option></template>
+      </select></div>
+    <div class="bw-fg"><span class="bw-fl">Preço mín (₽)</span>
       <div class="bw-range-wrap">
-        <input class="bw-range" type="range" min="0" max="100000" step="500"
-          x-model.number="fItems.priceMin" @input="applyFilters('items')">
+        <input class="bw-range" type="range" min="0" max="100000" step="500" x-model.number="fItems.priceMin" @input="applyFilters('items')">
         <span class="bw-range-val" x-text="fItems.priceMin.toLocaleString('pt-BR')"></span>
-      </div>
-    </div>
-    <div class="bw-fg">
-      <span class="bw-fl">Preço máx (₽)</span>
+      </div></div>
+    <div class="bw-fg"><span class="bw-fl">Preço máx (₽)</span>
       <div class="bw-range-wrap">
-        <input class="bw-range" type="range" min="0" max="100000" step="500"
-          x-model.number="fItems.priceMax" @input="applyFilters('items')">
+        <input class="bw-range" type="range" min="0" max="100000" step="500" x-model.number="fItems.priceMax" @input="applyFilters('items')">
         <span class="bw-range-val" x-text="fItems.priceMax >= 100000 ? '100.000+' : fItems.priceMax.toLocaleString('pt-BR')"></span>
-      </div>
-    </div>
-    <label class="bw-toggle">
-      <input type="checkbox" x-model="fItems.hasSprite" @change="applyFilters('items')">
-      Tem sprite
-    </label>
-    <label class="bw-toggle">
-      <input type="checkbox" x-model="fItems.hasPrice" @change="applyFilters('items')">
-      Tem preço
-    </label>
-    <label class="bw-toggle">
-      <input type="checkbox" x-model="fItems.isCraftable" @change="applyFilters('items')">
-      É craftável
-    </label>
-    <label class="bw-toggle">
-      <input type="checkbox" x-model="fItems.isBerry" @change="applyFilters('items')">
-      É berry
-    </label>
-    <button class="bw-btn-clear" x-show="activeFiltersCount > 0"
-      @click="clearFilters('items')">Limpar filtros</button>
+      </div></div>
+    <label class="bw-toggle"><input type="checkbox" x-model="fItems.hasSprite" @change="applyFilters('items')"> Tem sprite</label>
+    <label class="bw-toggle"><input type="checkbox" x-model="fItems.hasPrice" @change="applyFilters('items')"> Tem preço</label>
+    <label class="bw-toggle"><input type="checkbox" x-model="fItems.isCraftable" @change="applyFilters('items')"> É craftável</label>
+    <label class="bw-toggle"><input type="checkbox" x-model="fItems.isBerry" @change="applyFilters('items')"> É berry</label>
+    <button class="bw-btn-clear" x-show="activeFiltersCount > 0" @click="clearFilters('items')">Limpar filtros</button>
   </div>
 
   <!-- Moves filters -->
   <div class="bw-filters" x-show="activeTab === 'moves' && filtersOpen">
-    <div class="bw-fg">
-      <span class="bw-fl">Nome</span>
-      <input class="bw-input" type="search" placeholder="Buscar…"
-        x-model="fMoves.search" @input="applyFilters('moves')">
-    </div>
-    <div class="bw-fg">
-      <span class="bw-fl">Tipo</span>
+    <div class="bw-fg"><span class="bw-fl">Nome</span>
+      <input class="bw-input" type="search" placeholder="Buscar…" x-model="fMoves.search" @input="applyFilters('moves')"></div>
+    <div class="bw-fg"><span class="bw-fl">Tipo</span>
       <select class="bw-select" x-model="fMoves.type" @change="applyFilters('moves')">
         <option value="">Todos</option>
-        <template x-for="t in allTypes" :key="t">
-          <option :value="t" x-text="t.charAt(0).toUpperCase()+t.slice(1)"></option>
-        </template>
-      </select>
-    </div>
-    <div class="bw-fg">
-      <span class="bw-fl">Categoria</span>
+        <template x-for="t in allTypes" :key="t"><option :value="t" x-text="t.charAt(0).toUpperCase()+t.slice(1)"></option></template>
+      </select></div>
+    <div class="bw-fg"><span class="bw-fl">Categoria</span>
       <select class="bw-select" x-model="fMoves.category" @change="applyFilters('moves')">
         <option value="">Todas</option>
         <option value="physical">Físico</option>
         <option value="special">Especial</option>
         <option value="status">Status</option>
-      </select>
-    </div>
-    <div class="bw-fg">
-      <span class="bw-fl">Status</span>
+      </select></div>
+    <div class="bw-fg"><span class="bw-fl">Status</span>
       <select class="bw-select" x-model="fMoves.status" @change="applyFilters('moves')">
         <option value="">Todos</option>
         <option value="canonical">Padrão</option>
         <option value="modified">Modificado</option>
         <option value="original">Original</option>
-      </select>
-    </div>
-    <div class="bw-fg">
-      <span class="bw-fl">Poder mín</span>
-      <div class="bw-range-wrap">
-        <input class="bw-range" type="range" min="0" max="250" step="5"
-          x-model.number="fMoves.powerMin" @input="applyFilters('moves')">
-        <span class="bw-range-val" x-text="fMoves.powerMin"></span>
-      </div>
-    </div>
-    <label class="bw-toggle">
-      <input type="checkbox" x-model="fMoves.hasContest" @change="applyFilters('moves')">
-      Contest points
-    </label>
-    <label class="bw-toggle">
-      <input type="checkbox" x-model="fMoves.hasOutEffect" @change="applyFilters('moves')">
-      Efeito fora de batalha
-    </label>
-    <button class="bw-btn-clear" x-show="activeFiltersCount > 0"
-      @click="clearFilters('moves')">Limpar filtros</button>
+      </select></div>
+    <label class="bw-toggle"><input type="checkbox" x-model="fMoves.hasContest" @change="applyFilters('moves')"> Contest points</label>
+    <button class="bw-btn-clear" x-show="activeFiltersCount > 0" @click="clearFilters('moves')">Limpar filtros</button>
   </div>
 
   <!-- Abilities filters -->
   <div class="bw-filters" x-show="activeTab === 'abilities' && filtersOpen">
-    <div class="bw-fg">
-      <span class="bw-fl">Nome</span>
-      <input class="bw-input" type="search" placeholder="Buscar…"
-        x-model="fAbilities.search" @input="applyFilters('abilities')">
-    </div>
-    <div class="bw-fg">
-      <span class="bw-fl">Status</span>
+    <div class="bw-fg"><span class="bw-fl">Nome</span>
+      <input class="bw-input" type="search" placeholder="Buscar…" x-model="fAbilities.search" @input="applyFilters('abilities')"></div>
+    <div class="bw-fg"><span class="bw-fl">Status</span>
       <select class="bw-select" x-model="fAbilities.status" @change="applyFilters('abilities')">
         <option value="">Todos</option>
         <option value="canonical">Padrão</option>
         <option value="modified">Modificado</option>
         <option value="original">Original</option>
-      </select>
-    </div>
-    <label class="bw-toggle">
-      <input type="checkbox" x-model="fAbilities.hasOutEffect" @change="applyFilters('abilities')">
-      Com efeito fora de batalha
-    </label>
-    <button class="bw-btn-clear" x-show="activeFiltersCount > 0"
-      @click="clearFilters('abilities')">Limpar filtros</button>
+      </select></div>
+    <label class="bw-toggle"><input type="checkbox" x-model="fAbilities.hasOutEffect" @change="applyFilters('abilities')"> Com efeito fora de batalha</label>
+    <button class="bw-btn-clear" x-show="activeFiltersCount > 0" @click="clearFilters('abilities')">Limpar filtros</button>
   </div>
 
   <!-- ── RESULTS BAR ──────────────────────────────────────── -->
-  <div class="bw-bar">
-    <span x-text="`${curStore.filtered.length} resultado${curStore.filtered.length !== 1 ? 's' : ''}`"></span>
-    <span x-show="totalPages > 1" x-text="`Página ${curStore.page} de ${totalPages}`"></span>
-  </div>
+  <template x-if="activeTab !== 'ficha'">
+    <div class="bw-bar">
+      <span x-text="`${curStore.filtered.length} resultado${curStore.filtered.length !== 1 ? 's' : ''}`"></span>
+      <span x-show="totalPages > 1" x-text="`Página ${curStore.page} de ${totalPages}`"></span>
+    </div>
+  </template>
 
-  <!-- ══════════════════════════════════════════════════════
-       GRIDS
-  ══════════════════════════════════════════════════════════ -->
+  <!-- ── GRIDS ────────────────────────────────────────────── -->
 
   <!-- Pokémon grid -->
   <div class="bw-grid-pokemon" x-show="activeTab === 'pokemon'">
-    <template x-if="curStore.loading">
-      <div class="bw-state"><div class="bw-spinner"></div>Carregando Pokémon…</div>
-    </template>
-    <template x-if="!curStore.loading && curStore.filtered.length === 0">
-      <div class="bw-state">Nenhum Pokémon encontrado.</div>
-    </template>
+    <template x-if="curStore.loading"><div class="bw-state"><div class="bw-spinner"></div>Carregando Pokémon…</div></template>
+    <template x-if="!curStore.loading && curStore.filtered.length === 0"><div class="bw-state">Nenhum Pokémon encontrado.</div></template>
     <template x-for="p in pagedItems" :key="p.id">
       <div class="bw-pcard" @click="openModal('pokemon', p)">
         <div class="bw-pcard-img">
-          <template x-if="p.artwork_normal">
-            <img :src="p.artwork_normal" :alt="p.name" loading="lazy">
-          </template>
-          <template x-if="!p.artwork_normal">
-            <div class="bw-pcard-ph">◈</div>
-          </template>
+          <template x-if="p.artwork_normal"><img :src="p.artwork_normal" :alt="p.name" loading="lazy"></template>
+          <template x-if="!p.artwork_normal"><div class="bw-pcard-ph">◈</div></template>
         </div>
         <div class="bw-pcard-body">
-          <div class="bw-pcard-num" x-text="pokemonId(p.id)"></div>
+          <div class="bw-pcard-num" x-text="pokemonId(p)"></div>
           <div class="bw-pcard-name" x-text="p.name"></div>
           <div style="display:flex;gap:4px;flex-wrap:wrap">
             <span class="bw-badge" :style="typeBadgeStyle(p.type1)" x-text="p.type1"></span>
-            <template x-if="p.type2">
-              <span class="bw-badge" :style="typeBadgeStyle(p.type2)" x-text="p.type2"></span>
-            </template>
+            <template x-if="p.type2"><span class="bw-badge" :style="typeBadgeStyle(p.type2)" x-text="p.type2"></span></template>
           </div>
         </div>
       </div>
@@ -1420,35 +256,21 @@ a { text-decoration: none; }
 
   <!-- Items grid -->
   <div class="bw-grid-wide" x-show="activeTab === 'items'">
-    <template x-if="curStore.loading">
-      <div class="bw-state"><div class="bw-spinner"></div>Carregando itens…</div>
-    </template>
-    <template x-if="!curStore.loading && curStore.filtered.length === 0">
-      <div class="bw-state">Nenhum item encontrado.</div>
-    </template>
+    <template x-if="curStore.loading"><div class="bw-state"><div class="bw-spinner"></div>Carregando itens…</div></template>
+    <template x-if="!curStore.loading && curStore.filtered.length === 0"><div class="bw-state">Nenhum item encontrado.</div></template>
     <template x-for="item in pagedItems" :key="item.id">
       <div class="bw-icard" @click="openModal('item', item)">
         <div class="bw-icard-img">
-          <template x-if="itemSprites(item).length > 0">
-            <img :src="itemSprites(item)[0]" :alt="item.name" loading="lazy">
-          </template>
-          <template x-if="itemSprites(item).length === 0">
-            <div class="bw-icard-img-ph">◈</div>
-          </template>
+          <template x-if="itemSprites(item).length > 0"><img :src="itemSprites(item)[0]" :alt="item.name" loading="lazy"></template>
+          <template x-if="itemSprites(item).length === 0"><div class="bw-icard-img-ph">◈</div></template>
         </div>
         <div class="bw-icard-body">
           <div class="bw-icard-name" x-text="item.name"></div>
           <div class="bw-icard-cat" x-text="item.category_name || '—'"></div>
-          <template x-if="item.price != null">
-            <div class="bw-icard-price" x-text="fmtPrice(item.price)"></div>
-          </template>
+          <template x-if="item.price != null"><div class="bw-icard-price" x-text="fmtPrice(item.price)"></div></template>
           <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:2px">
-            <template x-if="item.is_craftable">
-              <span class="bw-badge-status" style="background:#e8f5e0;color:#3a6a20;font-size:10px;padding:1px 6px">Craftável</span>
-            </template>
-            <template x-if="item.is_berry">
-              <span class="bw-badge-status" style="background:#fff8d0;color:#7a6a10;font-size:10px;padding:1px 6px">Berry</span>
-            </template>
+            <template x-if="item.is_craftable"><span class="bw-badge-status" style="background:#e8f5e0;color:#3a6a20;font-size:10px;padding:1px 6px">Craftável</span></template>
+            <template x-if="item.is_berry"><span class="bw-badge-status" style="background:#fff8d0;color:#7a6a10;font-size:10px;padding:1px 6px">Berry</span></template>
           </div>
         </div>
       </div>
@@ -1457,109 +279,74 @@ a { text-decoration: none; }
 
   <!-- Moves grid -->
   <div class="bw-grid-wide" x-show="activeTab === 'moves'">
-    <template x-if="curStore.loading">
-      <div class="bw-state"><div class="bw-spinner"></div>Carregando moves…</div>
-    </template>
-    <template x-if="!curStore.loading && curStore.filtered.length === 0">
-      <div class="bw-state">Nenhum move encontrado.</div>
-    </template>
+    <template x-if="curStore.loading"><div class="bw-state"><div class="bw-spinner"></div>Carregando moves…</div></template>
+    <template x-if="!curStore.loading && curStore.filtered.length === 0"><div class="bw-state">Nenhum move encontrado.</div></template>
     <template x-for="m in pagedItems" :key="m.id">
-      <div class="bw-mcard"
-        :style="`background:var(--row);--mcard-color:${typeHex(m.type)}`"
-        @click="openModal('move', m)">
+      <div class="bw-mcard" :style="`background:var(--row);--mcard-color:${typeHex(m.type)}`" @click="openModal('move', m)">
         <div class="bw-mcard-stripe" :style="`background:${typeHex(m.type)}`"></div>
         <div class="bw-mcard-top">
           <div class="bw-mcard-name" x-text="m.name"></div>
           <div class="bw-mcard-badges">
-            <template x-if="m.type">
-              <span class="bw-badge" :style="typeBadgeStyle(m.type)" x-text="m.type"></span>
-            </template>
+            <template x-if="m.type"><span class="bw-badge" :style="typeBadgeStyle(m.type)" x-text="m.type"></span></template>
           </div>
         </div>
         <div class="bw-mcard-badges" style="padding-left:8px">
-          <template x-if="m.category">
-            <span class="bw-badge-status" style="background:var(--forums)" x-text="catLabel(m.category)"></span>
-          </template>
-          <template x-if="m.status">
-            <span class="bw-badge-status" :style="statusBadgeStyle(m.status)" x-text="statusLabel(m.status)"></span>
-          </template>
+          <template x-if="m.category"><span class="bw-badge-status" style="background:var(--forums)" x-text="catLabel(m.category)"></span></template>
+          <template x-if="m.status"><span class="bw-badge-status" :style="statusBadgeStyle(m.status)" x-text="statusLabel(m.status)"></span></template>
         </div>
-        <template x-if="m.description">
-          <div class="bw-mcard-desc" x-text="m.description"></div>
-        </template>
+        <template x-if="m.description"><div class="bw-mcard-desc" x-text="m.description"></div></template>
       </div>
     </template>
   </div>
 
   <!-- Abilities grid -->
   <div class="bw-grid-wide" x-show="activeTab === 'abilities'">
-    <template x-if="curStore.loading">
-      <div class="bw-state"><div class="bw-spinner"></div>Carregando habilidades…</div>
-    </template>
-    <template x-if="!curStore.loading && curStore.filtered.length === 0">
-      <div class="bw-state">Nenhuma habilidade encontrada.</div>
-    </template>
+    <template x-if="curStore.loading"><div class="bw-state"><div class="bw-spinner"></div>Carregando habilidades…</div></template>
+    <template x-if="!curStore.loading && curStore.filtered.length === 0"><div class="bw-state">Nenhuma habilidade encontrada.</div></template>
     <template x-for="a in pagedItems" :key="a.id">
       <div class="bw-lcard" @click="openModal('ability', a)">
         <div class="bw-lcard-top">
           <div class="bw-lcard-name" x-text="a.name"></div>
-          <template x-if="a.status">
-            <span class="bw-badge-status" :style="statusBadgeStyle(a.status)" x-text="statusLabel(a.status)"></span>
-          </template>
+          <template x-if="a.status"><span class="bw-badge-status" :style="statusBadgeStyle(a.status)" x-text="statusLabel(a.status)"></span></template>
         </div>
-        <template x-if="a.description">
-          <div class="bw-lcard-desc" x-text="a.description"></div>
-        </template>
+        <template x-if="a.description"><div class="bw-lcard-desc" x-text="a.description"></div></template>
       </div>
     </template>
   </div>
 
   <!-- ── PAGINATION ───────────────────────────────────────── -->
-  <div class="bw-pager" x-show="totalPages > 1">
-    <button class="bw-pager-btn" :disabled="curStore.page <= 1" @click="goToPage(curStore.page - 1)">‹</button>
-
-    <template x-for="(p, i) in paginationPages" :key="i">
-      <template x-if="p === '…'">
-        <div class="bw-pager-ellipsis">…</div>
+  <template x-if="activeTab !== 'ficha'">
+    <div class="bw-pager" x-show="totalPages > 1">
+      <button class="bw-pager-btn" :disabled="curStore.page <= 1" @click="goToPage(curStore.page - 1)">‹</button>
+      <template x-for="(p, i) in paginationPages" :key="i">
+        <template x-if="p === '…'"><div class="bw-pager-ellipsis">…</div></template>
+        <template x-if="p !== '…'">
+          <button class="bw-pager-btn" :class="{ active: curStore.page === p }" @click="goToPage(p)" x-text="p"></button>
+        </template>
       </template>
-      <template x-if="p !== '…'">
-        <button class="bw-pager-btn" :class="{ active: curStore.page === p }"
-          @click="goToPage(p)" x-text="p"></button>
+      <template x-if="totalPages > 7">
+        <input class="bw-pager-input" type="number" min="1" :max="totalPages" placeholder="ir…" @keydown.enter="jumpPage($event)" title="Ir para página">
       </template>
-    </template>
-
-    <template x-if="totalPages > 7">
-      <input class="bw-pager-input" type="number" min="1" :max="totalPages"
-        placeholder="ir…" @keydown.enter="jumpPage($event)" title="Ir para página">
-    </template>
-
-    <button class="bw-pager-btn" :disabled="curStore.page >= totalPages" @click="goToPage(curStore.page + 1)">›</button>
-  </div>
+      <button class="bw-pager-btn" :disabled="curStore.page >= totalPages" @click="goToPage(curStore.page + 1)">›</button>
+    </div>
+  </template>
 
   <!-- ══════════════════════════════════════════════════════
-       MODAL OVERLAY
+       MODAL
   ══════════════════════════════════════════════════════════ -->
-  <div class="bw-overlay" x-show="modal.open" x-cloak
-    @click.self="closeModal()"
-    @keydown.escape.window="closeModal()">
-
+  <div class="bw-overlay" x-show="modal.open" x-cloak @click.self="closeModal()" @keydown.escape.window="closeModal()">
     <div class="bw-modal" x-show="modal.open" x-transition>
 
-      <!-- Modal header (common) -->
+      <!-- Modal header -->
       <div class="bw-mhead" x-show="modal.data">
         <div class="bw-mhead-left">
           <div class="bw-mhead-title" x-text="modal.data?.name"></div>
-
-          <!-- Pokémon sub: id + classification -->
           <template x-if="modal.type === 'pokemon'">
-            <div class="bw-mhead-sub" x-text="pokemonId(modal.data?.id) + (modal.data?.classification ? ' · ' + modal.data?.classification : '')"></div>
+            <div class="bw-mhead-sub" x-text="pokemonId(modal.data)"></div>
           </template>
-          <!-- Item sub: category -->
           <template x-if="modal.type === 'item' && modal.data?.category_name">
             <div class="bw-mhead-sub" x-text="modal.data?.category_name"></div>
           </template>
-
-          <!-- Type badges row -->
           <div class="bw-mhead-badges">
             <template x-if="modal.type === 'pokemon'">
               <span x-show="modal.data?.type1" class="bw-badge" :style="typeBadgeStyle(modal.data?.type1)" x-text="modal.data?.type1"></span>
@@ -1578,11 +365,9 @@ a { text-decoration: none; }
             </template>
           </div>
         </div>
-
-        <!-- Action buttons -->
+        <!-- Botões: Compartilhar | Voltar | Fechar -->
         <div class="bw-mbtns">
-          <button class="bw-mbtn" :class="{ copied: copiedUrl }" @click="copyUrl()"
-            :title="copiedUrl ? 'URL copiada!' : 'Copiar link'">
+          <button class="bw-mbtn" :class="{ copied: copiedUrl }" @click="copyUrl()" :title="copiedUrl ? 'URL copiada!' : 'Copiar link'">
             <span x-text="copiedUrl ? '✓' : '🔗'"></span>
           </button>
           <template x-if="modalHistory.length > 0">
@@ -1592,99 +377,47 @@ a { text-decoration: none; }
         </div>
       </div>
 
-      <!-- Loading state -->
-      <div class="bw-mloading" x-show="modal.loading">
-        <div class="bw-spinner"></div>
-      </div>
+      <div class="bw-mloading" x-show="modal.loading"><div class="bw-spinner"></div></div>
 
-      <!-- ── POKEMON MODAL BODY ────────────────────────────── -->
+      <!-- Pokémon modal body -->
       <template x-if="modal.type === 'pokemon' && !modal.loading && modal.data">
       <div class="bw-mbody">
-
-        <!-- Artwork -->
         <div class="bw-artwork">
-          <template x-if="artworkUrl(modal.data)">
-            <img :src="artworkUrl(modal.data)" :alt="modal.data?.name">
-          </template>
-          <template x-if="!artworkUrl(modal.data)">
-            <div class="bw-artwork-ph">◈</div>
-          </template>
-          <!-- Artwork toggle -->
-          <div class="bw-artwork-tog"
-            x-show="modal.data?.artwork_shadow || modal.data?.artwork_aura">
-            <button class="bw-atbtn" :class="{ active: activeArtwork==='normal' }"
-              @click="activeArtwork='normal'">Normal</button>
+          <template x-if="artworkUrl(modal.data)"><img :src="artworkUrl(modal.data)" :alt="modal.data?.name"></template>
+          <template x-if="!artworkUrl(modal.data)"><div class="bw-artwork-ph">◈</div></template>
+          <div class="bw-artwork-tog" x-show="modal.data?.artwork_shadow || modal.data?.artwork_aura">
+            <button class="bw-atbtn" :class="{ active: activeArtwork==='normal' }" @click="activeArtwork='normal'">Normal</button>
             <template x-if="modal.data?.artwork_shadow">
-              <button class="bw-atbtn" :class="{ active: activeArtwork==='shadow' }"
-                @click="activeArtwork='shadow'">Sombra</button>
+              <button class="bw-atbtn" :class="{ active: activeArtwork==='shadow' }" @click="activeArtwork='shadow'">Sombra</button>
             </template>
             <template x-if="modal.data?.artwork_aura">
-              <button class="bw-atbtn" :class="{ active: activeArtwork==='aura' }"
-                @click="activeArtwork='aura'">Aura</button>
+              <button class="bw-atbtn" :class="{ active: activeArtwork==='aura' }" @click="activeArtwork='aura'">Aura</button>
             </template>
           </div>
         </div>
-
-        <!-- Info grid -->
         <div class="bw-msect">
           <div class="bw-msect-title">Informações</div>
           <div class="bw-igrid">
-            <template x-if="fmtHeight(modal.data?.height)">
-              <div class="bw-irow">
-                <span class="bw-ikey">Altura</span>
-                <span class="bw-ival" x-text="fmtHeight(modal.data?.height)"></span>
-              </div>
-            </template>
-            <template x-if="fmtWeight(modal.data?.weight)">
-              <div class="bw-irow">
-                <span class="bw-ikey">Peso</span>
-                <span class="bw-ival" x-text="fmtWeight(modal.data?.weight)"></span>
-              </div>
-            </template>
-            <div class="bw-irow">
-              <span class="bw-ikey">Gênero</span>
-              <span class="bw-ival" x-text="fmtGender(modal.data?.gender_male, modal.data?.gender_female)"></span>
-            </div>
+            <div class="bw-irow"><span class="bw-ikey">Gênero</span><span class="bw-ival" x-text="fmtGender(modal.data?.gender_male, modal.data?.gender_female)"></span></div>
             <template x-if="modal.data?.egg_group1">
-              <div class="bw-irow">
-                <span class="bw-ikey">Grupo de Ovo</span>
-                <span class="bw-ival" x-text="[modal.data?.egg_group1, modal.data?.egg_group2].filter(Boolean).join(', ')"></span>
-              </div>
+              <div class="bw-irow"><span class="bw-ikey">Grupo de Ovo</span><span class="bw-ival" x-text="[modal.data?.egg_group1, modal.data?.egg_group2].filter(Boolean).join(', ')"></span></div>
             </template>
-            <div class="bw-irow">
-              <span class="bw-ikey">Pode cruzar</span>
-              <span class="bw-ival" x-text="modal.data?.can_breed ? 'Sim' : 'Não'"></span>
-            </div>
-            <template x-if="modal.data?.base_exp != null">
-              <div class="bw-irow">
-                <span class="bw-ikey">EXP Base</span>
-                <span class="bw-ival" x-text="modal.data?.base_exp"></span>
-              </div>
-            </template>
+            <div class="bw-irow"><span class="bw-ikey">Pode cruzar</span><span class="bw-ival" x-text="modal.data?.can_breed ? 'Sim' : 'Não'"></span></div>
           </div>
         </div>
-
-        <!-- Stats -->
         <div class="bw-msect">
           <div class="bw-msect-title">Estatísticas base</div>
           <div class="bw-stats">
             <template x-for="s in statRows(modal.data)" :key="s.key">
               <div class="bw-srow">
                 <div class="bw-slbl" x-text="s.label"></div>
-                <div class="bw-strack">
-                  <div class="bw-sbar" :style="`width:${statBarPct(s.val)};background:${s.color}`"></div>
-                </div>
+                <div class="bw-strack"><div class="bw-sbar" :style="`width:${statBarPct(s.val)};background:${s.color}`"></div></div>
                 <div class="bw-sval" x-text="s.val"></div>
               </div>
             </template>
-            <div class="bw-stotal">
-              <div class="bw-stlbl">Total</div>
-              <div class="bw-stval" x-text="statTotal(modal.data)"></div>
-            </div>
+            <div class="bw-stotal"><div class="bw-stlbl">Total</div><div class="bw-stval" x-text="statTotal(modal.data)"></div></div>
           </div>
         </div>
-
-        <!-- Dex entries -->
         <template x-if="modal.data?.dex_entries?.length > 0">
           <div class="bw-msect">
             <div class="bw-msect-title">Entradas da Pokédex</div>
@@ -1695,39 +428,28 @@ a { text-decoration: none; }
             </div>
           </div>
         </template>
-
-        <!-- Move list -->
         <template x-if="modal.extra?.moves?.length > 0">
           <div class="bw-msect">
             <div class="bw-msect-title">Moves aprendidos</div>
             <template x-for="group in groupedMoves(modal.extra?.moves ?? [])" :key="group.method">
               <div style="margin-bottom:10px">
                 <div class="bw-method-label" x-text="methodLabel(group.method)"></div>
-
-                <!-- Por Nível: 2 colunas (Nível + Nome) -->
                 <template x-if="group.method === 'level-up'">
                   <table class="bw-mtable">
                     <thead><tr><th>Nível</th><th>Nome</th></tr></thead>
                     <tbody>
                       <template x-for="(mv, idx) in group.moves" :key="idx">
-                        <tr>
-                          <td x-text="mv.level ?? '—'" style="width:60px;opacity:.65"></td>
-                          <td><button class="bw-mlink" @click="openMoveByName(mv.move_name)" x-text="mv.move_name"></button></td>
-                        </tr>
+                        <tr><td x-text="mv.level ?? '—'" style="width:60px;opacity:.65"></td><td><button class="bw-mlink" @click="openMoveByName(mv.move_name)" x-text="mv.move_name"></button></td></tr>
                       </template>
                     </tbody>
                   </table>
                 </template>
-
-                <!-- Outros métodos: só Nome -->
                 <template x-if="group.method !== 'level-up'">
                   <table class="bw-mtable">
                     <thead><tr><th>Nome</th></tr></thead>
                     <tbody>
                       <template x-for="(mv, idx) in group.moves" :key="idx">
-                        <tr>
-                          <td><button class="bw-mlink" @click="openMoveByName(mv.move_name)" x-text="mv.move_name"></button></td>
-                        </tr>
+                        <tr><td><button class="bw-mlink" @click="openMoveByName(mv.move_name)" x-text="mv.move_name"></button></td></tr>
                       </template>
                     </tbody>
                   </table>
@@ -1739,16 +461,12 @@ a { text-decoration: none; }
       </div>
       </template>
 
-      <!-- ── ITEM MODAL BODY ───────────────────────────────── -->
+      <!-- Item modal body -->
       <template x-if="modal.type === 'item' && !modal.loading && modal.data">
       <div class="bw-mbody">
-
-        <!-- Sprite carousel -->
         <template x-if="itemSprites(modal.data).length > 0">
           <div class="bw-carousel">
-            <div class="bw-carousel-frame">
-              <img :src="itemSprites(modal.data)[carouselIdx]" :alt="modal.data?.name">
-            </div>
+            <div class="bw-carousel-frame"><img :src="itemSprites(modal.data)[carouselIdx]" :alt="modal.data?.name"></div>
             <div class="bw-carousel-dots" x-show="itemSprites(modal.data).length > 1">
               <template x-for="(_, di) in itemSprites(modal.data)" :key="di">
                 <div class="bw-dot" :class="{ active: carouselIdx === di }" @click="carouselIdx = di"></div>
@@ -1756,37 +474,21 @@ a { text-decoration: none; }
             </div>
           </div>
         </template>
-
-        <!-- Price -->
         <div class="bw-msect">
           <div class="bw-msect-title">Preço</div>
-          <div class="bw-ival" style="font-size:15px;font-weight:700;color:var(--color)"
-            x-text="fmtPrice(modal.data?.price) ?? 'Sem preço definido'"></div>
+          <div class="bw-ival" style="font-size:15px;font-weight:700;color:var(--color)" x-text="fmtPrice(modal.data?.price) ?? 'Sem preço definido'"></div>
         </div>
-
-        <!-- Description -->
         <template x-if="modal.data?.description">
-          <div class="bw-msect">
-            <div class="bw-msect-title">Descrição</div>
-            <div class="bw-prose" x-html="modal.data?.description"></div>
-          </div>
+          <div class="bw-msect"><div class="bw-msect-title">Descrição</div><div class="bw-prose" x-html="modal.data?.description"></div></div>
         </template>
-
-        <!-- Crafting -->
         <template x-if="modal.extra?.crafting">
           <div class="bw-msect">
             <div class="bw-msect-title">Receita de craft</div>
             <div class="bw-igrid" style="margin-bottom:8px">
               <template x-if="modal.extra.crafting.craft_skill">
-                <div class="bw-irow">
-                  <span class="bw-ikey">Habilidade</span>
-                  <span class="bw-ival" x-text="modal.extra.crafting.craft_skill"></span>
-                </div>
+                <div class="bw-irow"><span class="bw-ikey">Habilidade</span><span class="bw-ival" x-text="modal.extra.crafting.craft_skill"></span></div>
               </template>
-              <div class="bw-irow">
-                <span class="bw-ikey">Resultado</span>
-                <span class="bw-ival" x-text="(modal.extra.crafting.result_quantity ?? 1) + ' unidade(s)'"></span>
-              </div>
+              <div class="bw-irow"><span class="bw-ikey">Resultado</span><span class="bw-ival" x-text="(modal.extra.crafting.result_quantity ?? 1) + ' unidade(s)'"></span></div>
             </div>
             <div class="bw-craft-slots">
               <template x-for="(slot, si) in (modal.extra.crafting.crafting_slots ?? [])" :key="si">
@@ -1796,13 +498,8 @@ a { text-decoration: none; }
                     <template x-for="(opt, oi) in slot.crafting_slot_options" :key="oi">
                       <span>
                         <template x-if="oi > 0"><span class="bw-craft-sep">ou</span></template>
-                        <template x-if="slotOptionLabel(opt).itemId">
-                          <button class="bw-mlink" @click="openItemById(slotOptionLabel(opt).itemId)"
-                            x-text="slotOptionLabel(opt).text"></button>
-                        </template>
-                        <template x-if="!slotOptionLabel(opt).itemId">
-                          <span x-text="slotOptionLabel(opt).text"></span>
-                        </template>
+                        <template x-if="slotOptionLabel(opt).itemId"><button class="bw-mlink" @click="openItemById(slotOptionLabel(opt).itemId)" x-text="slotOptionLabel(opt).text"></button></template>
+                        <template x-if="!slotOptionLabel(opt).itemId"><span x-text="slotOptionLabel(opt).text"></span></template>
                       </span>
                     </template>
                   </div>
@@ -1811,33 +508,19 @@ a { text-decoration: none; }
             </div>
           </div>
         </template>
-
-        <!-- Berry -->
         <template x-if="modal.extra?.berry">
           <div class="bw-msect">
             <div class="bw-msect-title">Dados de Berry</div>
             <div class="bw-igrid" style="margin-bottom:10px">
-              <template x-if="modal.extra.berry.rarity">
-                <div class="bw-irow">
-                  <span class="bw-ikey">Raridade</span>
-                  <span class="bw-ival" x-text="modal.extra.berry.rarity"></span>
-                </div>
-              </template>
-              <template x-if="modal.extra.berry.seasons?.length">
-                <div class="bw-irow">
-                  <span class="bw-ikey">Temporadas</span>
-                  <span class="bw-ival" x-text="modal.extra.berry.seasons.join(', ')"></span>
-                </div>
-              </template>
+              <template x-if="modal.extra.berry.rarity"><div class="bw-irow"><span class="bw-ikey">Raridade</span><span class="bw-ival" x-text="modal.extra.berry.rarity"></span></div></template>
+              <template x-if="modal.extra.berry.seasons?.length"><div class="bw-irow"><span class="bw-ikey">Temporadas</span><span class="bw-ival" x-text="modal.extra.berry.seasons.join(', ')"></span></div></template>
             </div>
             <div class="bw-msect-title" style="margin-bottom:6px">Flavors</div>
             <div class="bw-flavors">
               <template x-for="fl in berryFlavors(modal.extra.berry)" :key="fl.label">
                 <div class="bw-flavor-row">
                   <span class="bw-flavor-lbl" x-text="fl.label"></span>
-                  <div class="bw-flavor-track">
-                    <div class="bw-flavor-fill" :style="`width:${fl.val*10}%`"></div>
-                  </div>
+                  <div class="bw-flavor-track"><div class="bw-flavor-fill" :style="`width:${fl.val*10}%`"></div></div>
                   <span style="font-size:12px;width:20px;text-align:right;opacity:.7" x-text="fl.val"></span>
                 </div>
               </template>
@@ -1847,67 +530,18 @@ a { text-decoration: none; }
       </div>
       </template>
 
-      <!-- ── MOVE MODAL BODY ───────────────────────────────── -->
+      <!-- Move modal body -->
       <template x-if="modal.type === 'move' && !modal.loading && modal.data">
       <div class="bw-mbody">
-
-        <!-- Stats grid -->
         <div class="bw-move-stats">
-          <template x-if="modal.data?.power != null">
-            <div class="bw-move-stat-cell">
-              <span class="bw-move-stat-lbl">Poder</span>
-              <span class="bw-move-stat-val" x-text="modal.data?.power"></span>
-            </div>
-          </template>
-          <template x-if="modal.data?.accuracy != null">
-            <div class="bw-move-stat-cell">
-              <span class="bw-move-stat-lbl">Precisão</span>
-              <span class="bw-move-stat-val" x-text="modal.data?.accuracy + '%'"></span>
-            </div>
-          </template>
-          <template x-if="modal.data?.pp != null">
-            <div class="bw-move-stat-cell">
-              <span class="bw-move-stat-lbl">PP</span>
-              <span class="bw-move-stat-val" x-text="modal.data?.pp"></span>
-            </div>
-          </template>
-          <div class="bw-move-stat-cell">
-            <span class="bw-move-stat-lbl">Prioridade</span>
-            <span class="bw-move-stat-val" x-text="(modal.data?.priority ?? 0) > 0 ? '+' + modal.data?.priority : (modal.data?.priority ?? 0)"></span>
-          </div>
-          <template x-if="modal.data?.target">
-            <div class="bw-move-stat-cell" style="grid-column:1/-1">
-              <span class="bw-move-stat-lbl">Alvo</span>
-              <span class="bw-move-stat-val" style="font-size:12px" x-text="modal.data?.target"></span>
-            </div>
-          </template>
+          <template x-if="modal.data?.power != null"><div class="bw-move-stat-cell"><span class="bw-move-stat-lbl">Poder</span><span class="bw-move-stat-val" x-text="modal.data?.power"></span></div></template>
+          <template x-if="modal.data?.accuracy != null"><div class="bw-move-stat-cell"><span class="bw-move-stat-lbl">Precisão</span><span class="bw-move-stat-val" x-text="modal.data?.accuracy + '%'"></span></div></template>
+          <template x-if="modal.data?.pp != null"><div class="bw-move-stat-cell"><span class="bw-move-stat-lbl">PP</span><span class="bw-move-stat-val" x-text="modal.data?.pp"></span></div></template>
+          <div class="bw-move-stat-cell"><span class="bw-move-stat-lbl">Prioridade</span><span class="bw-move-stat-val" x-text="(modal.data?.priority ?? 0) > 0 ? '+' + modal.data?.priority : (modal.data?.priority ?? 0)"></span></div>
         </div>
-
-        <!-- Description -->
-        <template x-if="modal.data?.description">
-          <div class="bw-msect">
-            <div class="bw-msect-title">Descrição</div>
-            <div class="bw-prose" x-text="modal.data?.description"></div>
-          </div>
-        </template>
-
-        <!-- Out of battle effect -->
-        <template x-if="modal.data?.out_of_battle_effect">
-          <div class="bw-msect">
-            <div class="bw-msect-title">Efeito fora de batalha</div>
-            <div class="bw-prose" x-html="modal.data?.out_of_battle_effect"></div>
-          </div>
-        </template>
-
-        <!-- Contest -->
-        <template x-if="modal.data?.contest_points">
-          <div class="bw-msect">
-            <div class="bw-msect-title">Contest Points</div>
-            <div class="bw-ival" x-text="modal.data?.contest_points"></div>
-          </div>
-        </template>
-
-        <!-- Learned by -->
+        <template x-if="modal.data?.description"><div class="bw-msect"><div class="bw-msect-title">Descrição</div><div class="bw-prose" x-text="modal.data?.description"></div></div></template>
+        <template x-if="modal.data?.out_of_battle_effect"><div class="bw-msect"><div class="bw-msect-title">Efeito fora de batalha</div><div class="bw-prose" x-html="modal.data?.out_of_battle_effect"></div></div></template>
+        <template x-if="modal.data?.contest_points"><div class="bw-msect"><div class="bw-msect-title">Contest Points</div><div class="bw-ival" x-text="modal.data?.contest_points"></div></div></template>
         <template x-if="modal.extra?.learnedBy?.length > 0">
           <div class="bw-msect">
             <div class="bw-msect-title">Aprendido por</div>
@@ -1915,12 +549,8 @@ a { text-decoration: none; }
               <template x-for="(pm, pi) in modal.extra.learnedBy" :key="pi">
                 <button class="bw-poke-chip" @click="openPokemonById(pm.pokemon_id)">
                   <span x-text="pm.pokemon?.name ?? ('Pokémon #' + pm.pokemon_id)"></span>
-                  <template x-if="pm.learn_method === 'level-up' && pm.level">
-                    <span class="bw-poke-chip-lvl" x-text="'Nv.' + pm.level"></span>
-                  </template>
-                  <template x-if="pm.learn_method === 'machine'">
-                    <span class="bw-poke-chip-lvl">MT</span>
-                  </template>
+                  <template x-if="pm.learn_method === 'level-up' && pm.level"><span class="bw-poke-chip-lvl" x-text="'Nv.' + pm.level"></span></template>
+                  <template x-if="pm.learn_method === 'machine'"><span class="bw-poke-chip-lvl">MT</span></template>
                 </button>
               </template>
             </div>
@@ -1929,39 +559,21 @@ a { text-decoration: none; }
       </div>
       </template>
 
-      <!-- ── ABILITY MODAL BODY ────────────────────────────── -->
+      <!-- Ability modal body -->
       <template x-if="modal.type === 'ability' && !modal.loading && modal.data">
       <div class="bw-mbody">
-
-        <!-- Description -->
-        <template x-if="modal.data?.description">
-          <div class="bw-msect">
-            <div class="bw-msect-title">Descrição</div>
-            <div class="bw-prose" x-text="modal.data?.description"></div>
-          </div>
-        </template>
-
-        <!-- Out of battle -->
-        <template x-if="modal.data?.out_of_battle_effect">
-          <div class="bw-msect">
-            <div class="bw-msect-title">Efeito fora de batalha</div>
-            <div class="bw-prose" x-html="modal.data?.out_of_battle_effect"></div>
-          </div>
-        </template>
-
-        <!-- Pokémon with this ability — placeholder -->
+        <template x-if="modal.data?.description"><div class="bw-msect"><div class="bw-msect-title">Descrição</div><div class="bw-prose" x-text="modal.data?.description"></div></div></template>
+        <template x-if="modal.data?.out_of_battle_effect"><div class="bw-msect"><div class="bw-msect-title">Efeito fora de batalha</div><div class="bw-prose" x-html="modal.data?.out_of_battle_effect"></div></div></template>
         <div class="bw-msect">
           <div class="bw-msect-title">Pokémon com esta habilidade</div>
-          <div style="text-align:center;padding:24px 0;opacity:.4;font-size:13px">
-            🔧 Em breve
-          </div>
+          <div style="text-align:center;padding:24px 0;opacity:.4;font-size:13px">🔧 Em breve</div>
         </div>
       </div>
       </template>
 
-    </div><!-- .bw-modal -->
-  </div><!-- .bw-overlay -->
+    </div>
+  </div>
 
-</div><!-- #bulbawiki -->
+</div>
 </body>
 </html>
