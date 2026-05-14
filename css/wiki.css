@@ -535,6 +535,26 @@ button.bw-pager-btn.bw-pager-ellipsis { background: transparent; border-color: t
 .bw-flavor-val { font-size: 11px; width: 20px; text-align: right; opacity: .5; }
 
 
+
+/* Grid de 4 moves por linha */
+.bw-move-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+}
+.bw-move-grid .bw-move-badge {
+  width: 100%;
+  overflow: hidden;
+}
+.bw-move-badge-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bw-move-badge-lvl {
+  font-size: 9px;
+  opacity: .6;
+  font-weight: 400;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 /* Move badge com ícone de tipo */
 .bw-move-badge {
   display: inline-flex;

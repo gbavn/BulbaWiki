@@ -263,33 +263,44 @@
               <template x-for="group in groupedMoves(extra.moves)" :key="group.method">
                 <div style="margin-bottom:12px">
                   <div class="bw-method-label" x-text="methodLabel(group.method)"></div>
-                  <!-- Level: tabela com coluna de nível -->
+                  <!-- Level: grid 4 cols com nível inline no badge -->
                   <template x-if="group.method==='level'">
-                    <table class="bw-mtable">
-                      <thead><tr><th>Nível</th><th>Nome</th></tr></thead>
-                      <tbody>
-                        <template x-for="(mv,i) in group.moves" :key="i">
-                          <tr>
-                            <td x-text="mv.level||'—'" style="width:60px;opacity:.65"></td>
-                            <td>
-                            <button class="bw-move-badge" @click="openMoveById(mv.move_id)">
-                              <img :src="'assets/type-icons/'+(mv.moves&&mv.moves.type||'normal')+'.svg'" width="22" height="22" @error="this.style.display='none'">
-                              <span x-text="mv.moves&&mv.moves.name||mv.move_id"></span>
-                            </button>
-                          </td>
-                          </tr>
-                        </template>
-                      </tbody>
-                    </table>
-                  </template>
-                  <!-- Outros: chips -->
-                  <template x-if="group.method!=='level'">
-                    <div class="bw-poke-list">
+                    <div class="bw-move-grid">
                       <template x-for="(mv,i) in group.moves" :key="i">
                         <button class="bw-move-badge" @click="openMoveById(mv.move_id)">
-                        <img :src="'assets/type-icons/'+(mv.moves&&mv.moves.type||'normal')+'.svg'" width="22" height="22" @error="this.style.display='none'">
-                        <span x-text="mv.moves&&mv.moves.name||mv.move_id"></span>
-                      </button>
+                          <img :src="'assets/type-icons/'+(mv.moves&&mv.moves.type||'normal')+'.svg'" width="22" height="22" @error="this.style.display='none'">
+                          <span class="bw-move-badge-name" x-text="mv.moves&&mv.moves.name||mv.move_id"></span>
+                          <template x-if="mv.level"><span class="bw-move-badge-lvl" x-text="'(Nv.'+mv.level+')'"></span></template>
+                        </button>
+                      </template>
+                    </div>
+                  </template>
+                  <!-- Inicial/Evo/Ovo: grid 4 cols simples -->
+                  <template x-if="group.method!=='level'&&group.method!=='learnable'">
+                    <div class="bw-move-grid">
+                      <template x-for="(mv,i) in group.moves" :key="i">
+                        <button class="bw-move-badge" @click="openMoveById(mv.move_id)">
+                          <img :src="'assets/type-icons/'+(mv.moves&&mv.moves.type||'normal')+'.svg'" width="22" height="22" @error="this.style.display='none'">
+                          <span class="bw-move-badge-name" x-text="mv.moves&&mv.moves.name||mv.move_id"></span>
+                        </button>
+                      </template>
+                    </div>
+                  </template>
+                  <!-- Aprendíveis: grid 4 cols + spoiler via usePokemonChips hook -->
+                  <template x-if="group.method==='learnable'">
+                    <div>
+                      <div class="bw-move-grid">
+                        <template x-for="(mv,i) in visibleChips('learnable', group.moves)" :key="i">
+                          <button class="bw-move-badge" @click="openMoveById(mv.move_id)">
+                            <img :src="'assets/type-icons/'+(mv.moves&&mv.moves.type||'normal')+'.svg'" width="22" height="22" @error="this.style.display='none'">
+                            <span class="bw-move-badge-name" x-text="mv.moves&&mv.moves.name||mv.move_id"></span>
+                          </button>
+                        </template>
+                      </div>
+                      <template x-if="hasMore('learnable', group.moves)">
+                        <button class="bw-chips-more" @click="toggleChips('learnable')"
+                          x-text="_chipsExpanded['learnable'] ? 'Ver menos ▲' : '+ '+hiddenCount('learnable',group.moves)+' aprendíveis ▼'">
+                        </button>
                       </template>
                     </div>
                   </template>

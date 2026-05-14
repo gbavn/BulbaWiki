@@ -185,6 +185,6 @@ document.addEventListener('alpine:init', function() {
     }
 
     // Merge do hook usePokemonChips (spoiler de chips de Pokémon)
-    return Object.assign(base, usePokemonChips(10))
+    return Object.assign(base, usePokemonChips(12))
   })
 })
