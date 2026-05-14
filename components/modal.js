@@ -179,6 +179,8 @@ document.addEventListener('alpine:init', function() {
       hasDroppedBy(db)  { return db && ((db.held&&db.held.length)||(db.produced&&db.produced.length)) },
       hasItemSources(s) { return s && ((s.routeObjects&&s.routeObjects.length)||(s.quests&&s.quests.length)) },
 
+      moveTypeColor(type) { return TYPE_HEX_BBCODE[(type||'normal').toLowerCase()] || '#888' },
+
       formatSeasons(s) { return formatSeasons(s) },
       formatTime(t)    { return formatTime(t) },
       rarityLabel(n)   { return rarityLabel(n) },

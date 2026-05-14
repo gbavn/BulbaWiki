@@ -559,8 +559,7 @@ button.bw-pager-btn.bw-pager-ellipsis { background: transparent; border-color: t
 .bw-move-badge {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 3px 10px 3px 3px;
+  min-height: 30px;
   border-radius: 20px;
   background: var(--bw-chip-bg);
   color: var(--bw-chip-color);
@@ -572,13 +571,40 @@ button.bw-pager-btn.bw-pager-ellipsis { background: transparent; border-color: t
   transition: opacity .15s;
   font-family: inherit;
   text-align: left;
+  overflow: hidden;
+  padding-right: 10px;
+  gap: 8px;
 }
 .bw-move-badge:hover { opacity: .75; }
-.bw-move-badge img {
-  width: 22px;
-  height: 22px;
+
+/* Seção colorida à esquerda com corte via ::after */
+.bw-move-badge-type {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  padding: 0 18px 0 8px;
+  background: var(--tc, #888);
   flex-shrink: 0;
+}
+.bw-move-badge-type::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 18px;
+  background: var(--bw-chip-bg);
+  border-radius: 50% 0 0 50%;
+}
+.bw-move-badge-type img {
+  position: relative;
+  z-index: 1;
+  width: 20px;
+  height: 20px;
   display: block;
+  flex-shrink: 0;
 }
 
 /* Craft slots */
