@@ -80,48 +80,51 @@
             </div>
           </div>
 
-          <div class="bw-msect">
-            <div class="bw-msect-title">Informações</div>
-            <div class="bw-igrid">
-              <div class="bw-irow"><span class="bw-ikey">Gênero</span>
-                <span class="bw-ival" x-text="data.gender_male!=null?('♂ '+data.gender_male+'% / ♀ '+data.gender_female+'%'):'Sem gênero'"></span></div>
-              <template x-if="data.egg_group1">
-                <div class="bw-irow"><span class="bw-ikey">Grupo de Ovo</span>
-                  <span class="bw-ival" x-text="[data.egg_group1,data.egg_group2].filter(Boolean).join(', ')"></span></div>
-              </template>
-              <div class="bw-irow"><span class="bw-ikey">Pode cruzar</span><span class="bw-ival" x-text="data.can_breed?'Sim':'Não'"></span></div>
-              <template x-if="data.form_type"><div class="bw-irow"><span class="bw-ikey">Forma</span><span class="bw-ival" x-text="data.form_type"></span></div></template>
-            </div>
-          </div>
-
-          <div class="bw-msect">
-            <div class="bw-msect-title">Estatísticas base</div>
-            <div class="bw-stats">
-              <template x-for="s in statRows(data)" :key="s.key">
-                <div class="bw-srow">
-                  <div class="bw-slbl" x-text="s.label"></div>
-                  <div class="bw-strack"><div class="bw-sbar" :style="'width:'+statBarPct(s.val)+';background:'+s.color"></div></div>
-                  <div class="bw-sval" x-text="s.val"></div>
-                </div>
-              </template>
-              <div class="bw-stotal"><div class="bw-stlbl">Total</div><div class="bw-stval" x-text="statTotal(data)"></div></div>
-            </div>
-          </div>
-
-          <!-- Habilidades -->
-          <template x-if="extra&&extra.abilities&&extra.abilities.length>0">
+          <!-- Info + Stats em 2 colunas -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start">
             <div class="bw-msect">
-              <div class="bw-msect-title">Habilidades</div>
-              <div style="display:flex;flex-direction:column;gap:5px">
-                <template x-for="ab in extra.abilities" :key="ab.id">
-                  <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--row);border-radius:8px">
-                    <span style="font-size:12px;font-weight:600" x-text="ab.abilities&&ab.abilities.name"></span>
-                    <span class="bw-badge-status" style="background:var(--forums);font-size:10px;text-transform:capitalize" x-text="ab.slot"></span>
+              <div class="bw-msect-title">Estatísticas base</div>
+              <div class="bw-stats">
+                <template x-for="s in statRows(data)" :key="s.key">
+                  <div class="bw-srow">
+                    <div class="bw-slbl" x-text="s.label"></div>
+                    <div class="bw-strack"><div class="bw-sbar" :style="'width:'+statBarPct(s.val)+';background:'+s.color"></div></div>
+                    <div class="bw-sval" x-text="s.val"></div>
                   </div>
                 </template>
+                <div class="bw-stotal"><div class="bw-stlbl">Total</div><div class="bw-stval" x-text="statTotal(data)"></div></div>
               </div>
             </div>
-          </template>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div class="bw-msect">
+                <div class="bw-msect-title">Informações</div>
+                <div style="display:flex;flex-direction:column;gap:6px">
+                  <div class="bw-irow"><span class="bw-ikey">Gênero</span>
+                    <span class="bw-ival" x-text="data.gender_male!=null?('♂ '+data.gender_male+'% / ♀ '+data.gender_female+'%'):'Sem gênero'"></span></div>
+                  <template x-if="data.egg_group1">
+                    <div class="bw-irow"><span class="bw-ikey">Grupo de Ovo</span>
+                      <span class="bw-ival" x-text="[EGG_GROUP_LABELS[data.egg_group1]||data.egg_group1, EGG_GROUP_LABELS[data.egg_group2]||data.egg_group2].filter(Boolean).join(', ')"></span></div>
+                  </template>
+                  <div class="bw-irow"><span class="bw-ikey">Pode cruzar</span><span class="bw-ival" x-text="data.can_breed?'Sim':'Não'"></span></div>
+                  <template x-if="data.form_type"><div class="bw-irow"><span class="bw-ikey">Forma</span><span class="bw-ival" x-text="data.form_type"></span></div></template>
+                </div>
+              </div>
+              <!-- Habilidades compactas -->
+              <template x-if="extra&&extra.abilities&&extra.abilities.length>0">
+                <div class="bw-msect">
+                  <div class="bw-msect-title">Habilidades</div>
+                  <div style="display:flex;flex-direction:column;gap:4px">
+                    <template x-for="ab in extra.abilities" :key="ab.id">
+                      <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;padding:4px 8px;background:var(--row);border-radius:6px">
+                        <span style="font-size:12px;font-weight:600" x-text="ab.abilities&&ab.abilities.name"></span>
+                        <span style="font-size:9px;opacity:.5;text-transform:capitalize;flex-shrink:0" x-text="ab.ability_type"></span>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
 
           <!-- Onde encontrar -->
           <template x-if="extra&&extra.locations&&hasLocations(extra.locations)">
@@ -249,12 +252,7 @@
                   <template x-if="group.method!=='level'">
                     <div class="bw-poke-list">
                       <template x-for="(mv,i) in group.moves" :key="i">
-                        <button class="bw-poke-chip" @click="openMoveById(mv.move_id)">
-                        <template x-if="mv.moves&&mv.moves.type">
-                          <img class="bw-type-img" :src="'assets/types/type-'+(mv.moves.type||'normal')+'.png'" :alt="mv.moves.type" @error="this.style.display='none'">
-                        </template>
-                        <span x-text="mv.moves&&mv.moves.name||mv.move_id"></span>
-                      </button>
+                        <button class="bw-poke-chip" @click="openMoveById(mv.move_id)" x-text="mv.moves&&mv.moves.name||mv.move_id"></button>
                       </template>
                     </div>
                   </template>

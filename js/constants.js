@@ -74,3 +74,22 @@ const STAT_META = [
 ]
 
 const PER_PAGE = 12
+
+const EGG_GROUP_LABELS = {
+  'monster':      'Monster',
+  'water1':       'Water 1',
+  'water2':       'Water 2',
+  'water3':       'Water 3',
+  'bug':          'Bug',
+  'flying':       'Flying',
+  'field':        'Field',
+  'fairy':        'Fairy',
+  'grass':        'Grass',
+  'human-like':   'Human-Like',
+  'mineral':      'Mineral',
+  'amorphous':    'Amorphous',
+  'ditto':        'Ditto',
+  'dragon':       'Dragon',
+  'undiscovered': 'Undiscovered',
+  'no-eggs':      'Sem Ovos',
+}
