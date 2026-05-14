@@ -75,8 +75,23 @@ const STAT_META = [
 
 const PER_PAGE = 12
 
+const SEASON_META = {
+  spring: { label: 'Primavera', icon: 'fa-solid fa-seedling',  bg: '#e8f5e0', color: '#3a6a20' },
+  summer: { label: 'Verão',     icon: 'fa-solid fa-sun',       bg: '#fff8d0', color: '#7a6a10' },
+  autumn: { label: 'Outono',    icon: 'fa-solid fa-leaf',      bg: '#fdf0e8', color: '#8a3a10' },
+  winter: { label: 'Inverno',   icon: 'fa-solid fa-snowflake', bg: '#e8f8fd', color: '#1a6a7a' },
+}
+
+const BERRY_RARITY_META = {
+  'comum':      { label: 'Comum',      icon: 'fa-solid fa-circle',       bg: '#f0f0e8', color: '#5a5a3a' },
+  'intermediaria': { label: 'Intermédia', icon: 'fa-solid fa-circle-half-stroke', bg: '#e8f5e0', color: '#3a6a20' },
+  'intermediária': { label: 'Intermédia', icon: 'fa-solid fa-circle-half-stroke', bg: '#e8f5e0', color: '#3a6a20' },
+  'rara':       { label: 'Rara',       icon: 'fa-solid fa-diamond',      bg: '#e8e8fd', color: '#1a1a8a' },
+  'lendaria':   { label: 'Lendária',   icon: 'fa-solid fa-star',         bg: '#fff8d0', color: '#7a6a10' },
+  'lendária':   { label: 'Lendária',   icon: 'fa-solid fa-star',         bg: '#fff8d0', color: '#7a6a10' },
+}
+
 const EGG_GROUP_LABELS = {
-  'monster':      'Monster',
   'water1':       'Water 1',
   'water2':       'Water 2',
   'water3':       'Water 3',

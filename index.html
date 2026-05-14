@@ -423,9 +423,23 @@
           <template x-if="extra&&extra.berry">
             <div class="bw-msect">
               <div class="bw-msect-title"><i class="fa-solid fa-leaf"></i> Dados de Berry</div>
-              <div class="bw-igrid" style="margin-bottom:10px">
-                <template x-if="extra.berry.rarity"><div class="bw-irow"><span class="bw-ikey">Raridade</span><span class="bw-ival" x-text="extra.berry.rarity"></span></div></template>
-                <template x-if="extra.berry.seasons&&extra.berry.seasons.length"><div class="bw-irow"><span class="bw-ikey">Temporadas</span><span class="bw-ival" x-text="extra.berry.seasons.join(', ')"></span></div></template>
+              <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+                <!-- Raridade pill -->
+                <template x-if="extra.berry.rarity">
+                  <span :style="'display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:'+(BERRY_RARITY_META[(extra.berry.rarity||'').toLowerCase()]||{bg:\'var(--row)\',color:\'var(--colortext)\'}).bg+';color:'+(BERRY_RARITY_META[(extra.berry.rarity||'').toLowerCase()]||{color:\'var(--colortext)\'}).color">
+                    <i :class="(BERRY_RARITY_META[(extra.berry.rarity||'').toLowerCase()]||{icon:'fa-solid fa-circle'}).icon" style="font-size:10px"></i>
+                    <span x-text="(BERRY_RARITY_META[(extra.berry.rarity||'').toLowerCase()]||{label:extra.berry.rarity}).label"></span>
+                  </span>
+                </template>
+                <!-- Season pills -->
+                <template x-if="extra.berry.seasons&&extra.berry.seasons.length">
+                  <template x-for="s in extra.berry.seasons" :key="s">
+                    <span :style="'display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:'+(SEASON_META[s]||{bg:'var(--row)'}).bg+';color:'+(SEASON_META[s]||{color:'var(--colortext)'}).color">
+                      <i :class="(SEASON_META[s]||{icon:'fa-solid fa-calendar'}).icon" style="font-size:10px"></i>
+                      <span x-text="(SEASON_META[s]||{label:s}).label"></span>
+                    </span>
+                  </template>
+                </template>
               </div>
               <div class="bw-msect-title" style="margin-bottom:6px">Flavors</div>
               <div class="bw-flavors">
