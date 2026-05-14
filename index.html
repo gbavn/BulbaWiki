@@ -56,25 +56,15 @@
             </div>
           </div>
           <div class="bw-mbtns">
-            <template x-if="type==='pokemon'">
-              <div style="display:flex;gap:4px;align-items:center">
-                <label class="bw-mbtn" :class="{active:fichaContestPoints}" title="Com/sem contest points" style="cursor:pointer">
-                  <input type="checkbox" x-model="fichaContestPoints" style="display:none">
-                  <span style="font-size:13px;line-height:1">🎀</span>
-                </label>
-                <button class="bw-mbtn" :class="{copied:fichaCopiada}" @click="gerarFicha()" :title="fichaCopiada?'Ficha copiada!':'Copiar ficha (BBCode)'">
-                  <i :class="fichaCopiada?'fa-solid fa-check':'fa-solid fa-copy'"></i>
-                </button>
-              </div>
+            <template x-if="type==='pokemon'||type==='move'">
+              <label class="bw-mbtn" :class="{active:contestPoints}" title="Com/sem contest points" style="cursor:pointer">
+                <input type="checkbox" x-model="contestPoints" style="display:none">
+                <i class="fa-solid fa-award"></i>
+              </label>
             </template>
-            <template x-if="type==='move'">
-              <button class="bw-mbtn" :class="{copied:moveCopiado}" @click="copiarMove()" :title="moveCopiado?'Move copiado!':'Copiar move (BBCode)'">
-                <i :class="moveCopiado?'fa-solid fa-check':'fa-solid fa-code'"></i>
-              </button>
-            </template>
-            <template x-if="type==='item'">
-              <button class="bw-mbtn" :class="{copied:itemCopiado}" @click="copiarItem()" :title="itemCopiado?'Item copiado!':'Copiar item (BBCode)'">
-                <i :class="itemCopiado?'fa-solid fa-check':'fa-solid fa-box'"></i>
+            <template x-if="type==='pokemon'||type==='move'||type==='item'">
+              <button class="bw-mbtn" :class="{copied:copied}" @click="copiar()" :title="copied?'Copiado!':'Copiar BBCode'">
+                <i :class="copied?'fa-solid fa-check':'fa-solid fa-copy'"></i>
               </button>
             </template>
             <button class="bw-mbtn" :class="{copied:copiedUrl}" @click="copyUrl()" :title="copiedUrl?'URL copiada!':'Copiar link'">

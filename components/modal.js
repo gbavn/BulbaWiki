@@ -3,7 +3,7 @@ document.addEventListener('alpine:init', function() {
     var base = {
       open: false, type: null, data: null, extra: null, loading: false,
       history: [], copiedUrl: false, activeArtwork: 'normal', carouselIdx: 0,
-      fichaContestPoints: false, fichaCopiada: false, moveCopiado: false, itemCopiado: false,
+      contestPoints: false, copied: false,
 
       async openModal(type, data, push) {
         push = push !== false
@@ -55,19 +55,13 @@ document.addEventListener('alpine:init', function() {
       },
 
 
-      async gerarFicha() {
-        await BwSheet.gerarFicha(this.data, this.extra, this.fichaContestPoints)
-        var self=this; self.fichaCopiada=true; setTimeout(function(){ self.fichaCopiada=false },2000)
-      },
-
-      async copiarMove() {
-        await BwSheet.copiarMove(this.data)
-        var self=this; self.moveCopiado=true; setTimeout(function(){ self.moveCopiado=false },2000)
-      },
-
-      async copiarItem() {
-        await BwSheet.copiarItem(this.data)
-        var self=this; self.itemCopiado=true; setTimeout(function(){ self.itemCopiado=false },2000)
+      async copiar() {
+        var t = this.type, d = this.data, ex = this.extra, cp = this.contestPoints
+        if      (t === 'pokemon') await BwSheet.gerarFicha(d, ex, cp)
+        else if (t === 'move')    await BwSheet.copiarMove(d, cp)
+        else if (t === 'item')    await BwSheet.copiarItem(d)
+        var self = this; self.copied = true
+        setTimeout(function(){ self.copied = false }, 2000)
       },
 
             async copyUrl() {

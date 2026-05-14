@@ -102,11 +102,11 @@ var BwSheet = {
     try { await navigator.clipboard.writeText(sheet) } catch(e) { console.error(e) }
   },
 
-  async copiarMove(data) {
+  async copiarMove(data, contestPoints) {
     var m = data; if (!m) return
     var color = TYPE_HEX_BBCODE[(m.type||'normal').toLowerCase()]||'#a8a878'
     var text = '[color='+color+']'+m.name+'[/color]'
-    if (m.contest_points) text += ' [size=10][i]('+m.contest_points+')[/i][/size]'
+    if (contestPoints && m.contest_points) text += ' [size=10][i]('+m.contest_points+')[/i][/size]'
     try { await navigator.clipboard.writeText(text) } catch(e) { console.error(e) }
   },
 
