@@ -16,6 +16,8 @@
   --border2:   2px solid var(--color);
   --colortext: #222;
   --shadow:    0px 0px 30px #888;
+  --bw-chip-bg: #2d2d2d;
+  --bw-chip-color: #ffffff;
 }
 .tema-escuro {
   --color:     #6e336e;
@@ -27,6 +29,8 @@
   --border2:   2px solid var(--color);
   --colortext: #eeeeee;
   --shadow:    0px 0px 30px #222;
+  --bw-chip-bg: #1a1a1a;
+  --bw-chip-color: #ffffff;
 }
 
 /* ── RESET ───────────────────────────────────────────────── */
@@ -538,8 +542,8 @@ button.bw-pager-btn.bw-pager-ellipsis { background: transparent; border-color: t
   gap: 5px;
   padding: 3px 10px 3px 3px;
   border-radius: 20px;
-  background: var(--forums, #2a2a2a);
-  color: var(--colortext, #fff);
+  background: var(--bw-chip-bg);
+  color: var(--bw-chip-color);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
