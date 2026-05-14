@@ -441,13 +441,14 @@
                   </template>
                 </template>
               </div>
-              <div class="bw-msect-title" style="margin-bottom:6px">Flavors</div>
-              <div class="bw-flavors">
+              <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:4px">
                 <template x-for="fl in berryFlavors(extra.berry)" :key="fl.label">
-                  <div class="bw-flavor-row">
-                    <span class="bw-flavor-lbl" x-text="fl.label"></span>
-                    <div class="bw-flavor-track"><div class="bw-flavor-fill" :style="'width:'+fl.val*10+'%'"></div></div>
-                    <span style="font-size:12px;width:20px;text-align:right;opacity:.7" x-text="fl.val"></span>
+                  <div style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 6px;background:var(--row);border-radius:10px">
+                    <span style="font-size:16px;font-weight:700;color:var(--color)" x-text="fl.val"></span>
+                    <div style="width:100%;flex:1;min-height:60px;background:var(--wrap);border-radius:6px;overflow:hidden;display:flex;align-items:flex-end">
+                      <div :style="'width:100%;border-radius:6px;background:var(--color2);transition:height .4s ease;height:'+Math.max(4,fl.val*10)+'%'"></div>
+                    </div>
+                    <span style="font-size:10px;font-weight:600;opacity:.55;text-transform:uppercase;letter-spacing:.04em" x-text="fl.label"></span>
                   </div>
                 </template>
               </div>
