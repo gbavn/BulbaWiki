@@ -530,6 +530,33 @@ button.bw-pager-btn.bw-pager-ellipsis { background: transparent; border-color: t
 .bw-flavor-fill { height: 100%; border-radius: 20px; background: var(--color2); transition: width .4s ease; }
 .bw-flavor-val { font-size: 11px; width: 20px; text-align: right; opacity: .5; }
 
+
+/* Move badge com ícone de tipo */
+.bw-move-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px 3px 3px;
+  border-radius: 20px;
+  background: var(--forums, #2a2a2a);
+  color: var(--colortext, #fff);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  white-space: nowrap;
+  transition: opacity .15s;
+  font-family: inherit;
+  text-align: left;
+}
+.bw-move-badge:hover { opacity: .75; }
+.bw-move-badge img {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  display: block;
+}
+
 /* Craft slots */
 .bw-craft-slots { display: flex; flex-direction: column; gap: 6px; }
 .bw-craft-slot {
