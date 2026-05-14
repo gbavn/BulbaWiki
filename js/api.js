@@ -38,9 +38,9 @@ const BwAPI = {
   async loadPokemon() { return _all('pokemon', '*', 'pokeapi_id') },
 
   async loadPokemonMoves(pokemonId) {
-    const key = 'pm_' + pokemonId
+    const key = 'pm3_' + pokemonId
     if (_cache[key]) return _cache[key]
-    const data = await _pgFetch('pokemon_moves?select=id,pokemon_id,move_id,level,learn_method,moves(id,name,type,category)&pokemon_id=eq.' + pokemonId + '&order=level.asc.nullslast,move_id.asc')
+    const data = await _pgFetch('pokemon_moves?select=id,pokemon_id,move_id,level,learn_method,moves(id,name,type,category,contest_points)&pokemon_id=eq.' + pokemonId + '&order=level.asc.nullslast,move_id.asc')
     _cache[key] = data; return data
   },
 

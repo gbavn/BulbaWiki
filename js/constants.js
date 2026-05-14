@@ -108,3 +108,36 @@ const EGG_GROUP_LABELS = {
   'undiscovered': 'Undiscovered',
   'no-eggs':      'Sem Ovos',
 }
+
+// ── Gerador de ficha ──────────────────────────────────────────────────────────
+
+const TYPE_PILL_CODE = {
+  bug:'bug', dark:'dark', dragon:'dragon', electric:'elect',
+  fairy:'fairy', fighting:'fight', fire:'fire', flying:'fly',
+  ghost:'ghost', grass:'grass', ground:'ground', ice:'ice',
+  normal:'normal', poison:'poison', psychic:'psy',
+  rock:'rock', steel:'steel', water:'water',
+}
+
+const TYPE_HEX_BBCODE = {
+  bug:'#a8b820', dark:'#705848', dragon:'#7038f8', electric:'#c2a60c',
+  fairy:'#ee99ac', fighting:'#c03028', fire:'#f08030', flying:'#a890f0',
+  ghost:'#705898', grass:'#78c850', ground:'#e0c068', ice:'#98d8d8',
+  normal:'#a8a878', poison:'#a040a0', psychic:'#f85888',
+  rock:'#b8a038', steel:'#b8b8d0', water:'#6890f0',
+}
+
+const TYPE_IMMUNITIES_BBCODE = {
+  dark:    'Imune a golpes do Type [u]Psychic[/u]\nImune a moves do oponente que ganhem prioridade devido à habilidade [u]Prankster[/u]',
+  electric:'Imune ao Status Paralisia [i](Paralysis)[/i]',
+  fairy:   'Imune aos moves do Type [u]Dragon[/u]',
+  fire:    'Imune ao Status Queimadura [i](Burn)[/i]',
+  flying:  'Não está no solo [i](Grounded)[/i], não podendo ser afetado por Entry Hazards e Terrains que estejam no solo.\nImune aos moves do Type [u]Ground[/u]',
+  ghost:   'Imunes a ficarem presos por moves e habilidades. Imune a moves do Type [u]Fighting e Normal.[/u]\nImunes ao Status [url=https://bulbarpg.forumeiros.com/t12823-regra-guia-status-condition#247572]Sangramento [i](Bleed)[/i][/url]\nPossui 25% extra de escapar com o seu treinador.',
+  grass:   'Imune a golpes de [url=https://bulbapedia.bulbagarden.net/wiki/Category:Powder_and_spore_moves]Powder e Spore[/url], à Habilidade [u]Effect Spore[/u] e ao move [u]Leech Seed[/u]',
+  ground:  'Imune a moves do Type [u]Eletric[/u].',
+  ice:     'Imune ao Status Congelar [i](Freeze)[/i] e a [url=https://bulbarpg.forumeiros.com/t12823-regra-guia-status-condition#247571]Queimadura de Gelo [i](Frostbite)[/i][/url] e ao move [u]Sheer Cold[/u]',
+  normal:  'Imune aos moves do Type [u]Ghost[/u].',
+  poison:  'Imune ao Status Envenenado [i](Poisoned)[/i], excepto pela habilidade Corrosion. Se estiver no chão [i](grounded)[/i] irá absorver todos os Toxic Spikes do seu lado do campo. Se usar o move [u]Toxic[/u] o move nunca irá falhar.',
+  steel:   'Imune ao Status Envenenado [i](Poisoned)[/i] e a [url=https://bulbarpg.forumeiros.com/t12823-regra-guia-status-condition#247572]Sangramento [i](Bleed)[/i][/url]\nImune aos moves de Type [u]Poison[/u].',
+}

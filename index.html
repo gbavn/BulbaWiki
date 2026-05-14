@@ -55,6 +55,22 @@
             </div>
           </div>
           <div class="bw-mbtns">
+            <template x-if="type==='pokemon'">
+              <div style="display:flex;gap:4px;align-items:center">
+                <label class="bw-mbtn" :class="{active:fichaContestPoints}" title="Com/sem contest points" style="cursor:pointer">
+                  <input type="checkbox" x-model="fichaContestPoints" style="display:none">
+                  <i class="fa-solid fa-trophy"></i>
+                </label>
+                <button class="bw-mbtn" :class="{copied:fichaCopiada}" @click="gerarFicha()" :title="fichaCopiada?'Ficha copiada!':'Copiar ficha (BBCode)'">
+                  <i :class="fichaCopiada?'fa-solid fa-check':'fa-solid fa-scroll'"></i>
+                </button>
+              </div>
+            </template>
+            <template x-if="type==='move'">
+              <button class="bw-mbtn" :class="{copied:moveCopiado}" @click="copiarMove()" :title="moveCopiado?'Move copiado!':'Copiar move (BBCode)'">
+                <i :class="moveCopiado?'fa-solid fa-check':'fa-solid fa-code'"></i>
+              </button>
+            </template>
             <button class="bw-mbtn" :class="{copied:copiedUrl}" @click="copyUrl()" :title="copiedUrl?'URL copiada!':'Copiar link'">
               <i :class="copiedUrl?'fa-solid fa-check':'fa-solid fa-link'"></i>
             </button>

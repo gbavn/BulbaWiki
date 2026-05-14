@@ -417,6 +417,8 @@ button.bw-pager-btn.bw-pager-ellipsis { background: transparent; border-color: t
   font-size: 15px; transition: background .15s, color .15s;
 }
 .bw-mbtn:hover { background: var(--color); color: #fff; border-color: var(--color); }
+.bw-mbtn.active { background: var(--color); color: #fff; border-color: var(--color); opacity: .85; }
+.bw-mbtn.copied { background: var(--color); color: #fff; border-color: var(--color); }
 .bw-mbtn.copied { background: #4caf50; color: #fff; border-color: #4caf50; }
 .bw-mbody { padding: 18px; display: flex; flex-direction: column; gap: 18px; }
 
