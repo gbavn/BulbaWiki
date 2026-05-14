@@ -423,32 +423,30 @@
           <template x-if="extra&&extra.berry">
             <div class="bw-msect">
               <div class="bw-msect-title"><i class="fa-solid fa-leaf"></i> Dados de Berry</div>
-              <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">
-                <!-- Raridade pill -->
+              <!-- Raridade + Estações -->
+              <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
                 <template x-if="extra.berry.rarity">
-                  <span :style="'display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:'+(BERRY_RARITY_META[(extra.berry.rarity||'').toLowerCase()]||{bg:\'var(--row)\',color:\'var(--colortext)\'}).bg+';color:'+(BERRY_RARITY_META[(extra.berry.rarity||'').toLowerCase()]||{color:\'var(--colortext)\'}).color">
-                    <i :class="(BERRY_RARITY_META[(extra.berry.rarity||'').toLowerCase()]||{icon:'fa-solid fa-circle'}).icon" style="font-size:10px"></i>
-                    <span x-text="(BERRY_RARITY_META[(extra.berry.rarity||'').toLowerCase()]||{label:extra.berry.rarity}).label"></span>
+                  <span class="bw-badge" :style="berryRarityStyle(extra.berry.rarity)">
+                    <i :class="berryRarityIcon(extra.berry.rarity)" style="margin-right:4px;font-size:9px"></i>
+                    <span x-text="berryRarityLabel(extra.berry.rarity)"></span>
                   </span>
                 </template>
-                <!-- Season pills -->
-                <template x-if="extra.berry.seasons&&extra.berry.seasons.length">
-                  <template x-for="s in extra.berry.seasons" :key="s">
-                    <span :style="'display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:'+(SEASON_META[s]||{bg:'var(--row)'}).bg+';color:'+(SEASON_META[s]||{color:'var(--colortext)'}).color">
-                      <i :class="(SEASON_META[s]||{icon:'fa-solid fa-calendar'}).icon" style="font-size:10px"></i>
-                      <span x-text="(SEASON_META[s]||{label:s}).label"></span>
-                    </span>
-                  </template>
+                <template x-for="s in (extra.berry.seasons||[])" :key="s">
+                  <span class="bw-badge" :style="seasonStyle(s)">
+                    <i :class="seasonIcon(s)" style="margin-right:4px;font-size:9px"></i>
+                    <span x-text="seasonLabel(s)"></span>
+                  </span>
                 </template>
               </div>
-              <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:4px">
+              <!-- Flavor bars -->
+              <div class="bw-flavors">
                 <template x-for="fl in berryFlavors(extra.berry)" :key="fl.label">
-                  <div style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 6px;background:var(--row);border-radius:10px">
-                    <span style="font-size:16px;font-weight:700;color:var(--color)" x-text="fl.val"></span>
-                    <div style="width:100%;flex:1;min-height:60px;background:var(--wrap);border-radius:6px;overflow:hidden;display:flex;align-items:flex-end">
-                      <div :style="'width:100%;border-radius:6px;background:var(--color2);transition:height .4s ease;height:'+Math.max(4,fl.val*10)+'%'"></div>
+                  <div class="bw-flavor-row">
+                    <span class="bw-flavor-lbl" x-text="fl.label"></span>
+                    <div class="bw-flavor-track">
+                      <div class="bw-flavor-fill" :style="'width:'+fl.pct+'%;background:'+fl.color"></div>
                     </div>
-                    <span style="font-size:10px;font-weight:600;opacity:.55;text-transform:uppercase;letter-spacing:.04em" x-text="fl.label"></span>
+                    <span style="font-size:11px;width:18px;text-align:right;opacity:.55" x-text="fl.val"></span>
                   </div>
                 </template>
               </div>

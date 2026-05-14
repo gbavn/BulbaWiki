@@ -135,14 +135,33 @@ document.addEventListener('alpine:init', function() {
 
       berryFlavors(berry) {
         if (!berry) return []
-        return [
-          { label:'Beauty', val:berry.flavor_beauty||0 },
-          { label:'Clever', val:berry.flavor_clever||0 },
-          { label:'Cool',   val:berry.flavor_cool  ||0 },
-          { label:'Cute',   val:berry.flavor_cute  ||0 },
-          { label:'Tough',  val:berry.flavor_tough ||0 },
+        var flavors = [
+          { label:'Beleza',    val:berry.flavor_beauty||0, color:'#e91e8c' },
+          { label:'Esperteza', val:berry.flavor_clever||0, color:'#4caf50' },
+          { label:'Estilo',    val:berry.flavor_cool  ||0, color:'#2196f3' },
+          { label:'Fofura',    val:berry.flavor_cute  ||0, color:'#ff9800' },
+          { label:'Força',     val:berry.flavor_tough ||0, color:'#f44336' },
         ]
+        var max = Math.max(10, Math.max.apply(null, flavors.map(function(f){ return f.val })))
+        return flavors.map(function(f) { return Object.assign({}, f, { pct: Math.round((f.val/max)*100) }) })
       },
+
+      berryRarityStyle(rarity) {
+        var m = BERRY_RARITY_META[(rarity||'').toLowerCase()] || {}
+        return 'background:'+(m.bg||'var(--row)')+';color:'+(m.color||'var(--colortext)')
+      },
+      berryRarityIcon(rarity) {
+        return (BERRY_RARITY_META[(rarity||'').toLowerCase()]||{icon:'fa-solid fa-circle'}).icon
+      },
+      berryRarityLabel(rarity) {
+        return (BERRY_RARITY_META[(rarity||'').toLowerCase()]||{label:rarity}).label
+      },
+      seasonStyle(s) {
+        var m = SEASON_META[s] || {}
+        return 'background:'+(m.bg||'var(--row)')+';color:'+(m.color||'var(--colortext)')
+      },
+      seasonIcon(s) { return (SEASON_META[s]||{icon:'fa-solid fa-calendar'}).icon },
+      seasonLabel(s) { return (SEASON_META[s]||{label:s}).label },
 
       hasLocations(loc) { return loc && ((loc.maps&&loc.maps.length)||(loc.routeObjects&&loc.routeObjects.length)) },
       hasDrops(drops)   { return drops && ((drops.held&&drops.held.length)||(drops.produced&&drops.produced.length)) },
