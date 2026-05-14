@@ -10,7 +10,7 @@ document.addEventListener('alpine:init', function() {
         this.activeArtwork = 'normal'; this.carouselIdx = 0
         this._resetChips()
         this.open = true; this.type = type; this.data = data; this.extra = null; this.loading = true
-        window.location.hash = type + '-' + data.id
+        history.pushState(null, '', '#/' + type + '/' + data.id)
         try {
           if (type === 'pokemon') {
             const [moves, abilities, locations, drops] = await Promise.all([

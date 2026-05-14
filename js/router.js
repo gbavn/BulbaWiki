@@ -7,16 +7,27 @@
 // ============================================================
 
 const ROUTES = {
-  '':              'pages/home.html',
-  '/':             'pages/home.html',
-  '/pokemon':      'pages/pokemon.html',
-  '/moves':        'pages/moves.html',
-  '/abilities':    'pages/abilities.html',
-  '/items':        'pages/items.html',
+  '':            'pages/home.html',
+  '/':           'pages/home.html',
+  '/pokemon':    'pages/pokemon.html',
+  '/moves':      'pages/moves.html',
+  '/abilities':  'pages/abilities.html',
+  '/items':      'pages/items.html',
+}
+
+// Rota de detalhe (com id) → página base + tipo de modal
+const DETAIL_ROUTES = {
+  '/pokemon': { file: 'pages/pokemon.html', type: 'pokemon' },
+  '/item':    { file: 'pages/items.html',   type: 'item'    },
+  '/move':    { file: 'pages/moves.html',   type: 'move'    },
+  '/ability': { file: 'pages/abilities.html', type: 'ability' },
 }
 
 // Cache de fragmentos já carregados
 const _pageCache = {}
+
+// Página atualmente renderizada (evita reload desnecessário)
+var _currentFile = null
 
 // Elemento raiz onde as páginas são injetadas
 function getMain() {
@@ -27,8 +38,8 @@ function getMain() {
 // Ex: "#/pokemon/BF7VAT" → { route: '/pokemon', id: 'BF7VAT' }
 // Ex: "#/pokemon"        → { route: '/pokemon', id: null }
 function parseHash(hash) {
-  const path  = hash.replace(/^#/, '') || '/'
-  const parts = path.split('/')
+  var path  = hash.replace(/^#/, '') || '/'
+  var parts = path.split('/')
   // /pokemon/BF7VAT → parts = ['', 'pokemon', 'BF7VAT']
   if (parts.length === 3 && parts[2]) {
     return { route: '/' + parts[1], id: parts[2] }
@@ -39,46 +50,54 @@ function parseHash(hash) {
 async function loadPage(file) {
   if (_pageCache[file]) return _pageCache[file]
   try {
-    const res = await fetch(file)
-    if (!res.ok) throw new Error(`HTTP ${res.status} — ${file}`)
-    const html = await res.text()
+    var res = await fetch(file)
+    if (!res.ok) throw new Error('HTTP ' + res.status + ' — ' + file)
+    var html = await res.text()
     _pageCache[file] = html
     return html
   } catch (e) {
     console.error('[Router]', e)
-    return `<div style="padding:40px;text-align:center;opacity:.5">Erro ao carregar página.</div>`
+    return '<div style="padding:40px;text-align:center;opacity:.5">Erro ao carregar página.</div>'
   }
 }
 
-async function navigate(hash, pushState = false) {
-  const { route, id } = parseHash(hash)
+async function navigate(hash) {
+  var parsed = parseHash(hash)
+  var route  = parsed.route
+  var id     = parsed.id
 
-  // Rota de detalhe de Pokémon
-  if (route === '/pokemon' && id) {
-    await renderPage('pages/pokemon.html')
-    // Dispara evento para o componente da página abrir o modal
-    document.dispatchEvent(new CustomEvent('bw:open-pokemon', { detail: { id } }))
+  // Rota de detalhe (com id) → carrega página base + abre modal
+  var detail = DETAIL_ROUTES[route]
+  if (id && detail) {
+    if (_currentFile !== detail.file) {
+      await renderPage(detail.file)
+    }
+    // Aguarda Alpine inicializar na página antes de abrir o modal
+    setTimeout(function() {
+      document.dispatchEvent(new CustomEvent('bw:open-detail', {
+        detail: { type: detail.type, id: id }
+      }))
+    }, 150)
     return
   }
 
-  const file = ROUTES[route] ?? 'pages/home.html'
-  await renderPage(file)
-
-  if (pushState) {
-    history.pushState(null, '', window.location.pathname + (hash || ''))
+  // Rota de lista
+  var file = ROUTES[route] || 'pages/home.html'
+  if (_currentFile !== file) {
+    await renderPage(file)
   }
 }
 
 async function renderPage(file) {
-  const main = getMain()
+  var main = getMain()
   if (!main) return
 
-  // Mostra spinner enquanto carrega
-  main.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;padding:60px">
-    <div class="bw-spinner"></div>
-  </div>`
+  _currentFile = file
 
-  const html = await loadPage(file)
+  // Mostra spinner enquanto carrega
+  main.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;padding:60px"><div class="bw-spinner"></div></div>'
+
+  var html = await loadPage(file)
   main.innerHTML = html
 
   // Reinicializa Alpine nos novos elementos
@@ -90,11 +109,22 @@ function goTo(path) {
   window.location.hash = path
 }
 
-// Inicia o router: escuta hashchange + render inicial
+// Inicia o router: escuta hashchange + popstate + render inicial
 function initRouter() {
-  window.addEventListener('hashchange', () => {
+  window.addEventListener('hashchange', function() {
     navigate(window.location.hash)
   })
+
+  // popstate: dispara quando history.pushState é desfeito (botão voltar)
+  window.addEventListener('popstate', function() {
+    var hash = window.location.hash
+    if (hash) {
+      navigate(hash)
+    } else {
+      navigate('#/')
+    }
+  })
+
   // Render inicial
   navigate(window.location.hash || '#/')
 }

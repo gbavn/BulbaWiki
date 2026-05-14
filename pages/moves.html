@@ -3,7 +3,14 @@
   allTypes: Object.keys(TYPE_COLORS),
   f: { search:'', type:'', category:'', status:'', hasContest:false },
 
-  async init() { this.raw = await BwAPI.loadMoves(); this.applyFilters(); this.loading = false },
+  async init() { this.raw = await BwAPI.loadMoves(); this.applyFilters(); this.loading = false
+    var self = this
+    document.addEventListener('bw:open-detail', function(e) {
+      if (e.detail.type !== 'move') return
+      var m = self.raw.find(function(x) { return x.id === e.detail.id })
+      if (m) self.open(m)
+    })
+  },
 
   applyFilters() {
     const f=this.f, q=(f.search||'').toLowerCase().trim()
@@ -80,8 +87,7 @@
   <div class="bw-pager" x-show="totalPages()>1">
     <button class="bw-pager-btn" :disabled="_page<=1" @click="goTo(_page-1)"><i class="fa-solid fa-chevron-left"></i></button>
     <template x-for="(p,i) in paginationPages()" :key="i">
-      <template x-if="p==='…'"><div class="bw-pager-ellipsis">…</div></template>
-      <template x-if="p!=='…'"><button class="bw-pager-btn" :class="{active:_page===p}" @click="goTo(p)" x-text="p"></button></template>
+      <button class="bw-pager-btn" :class="{active:p!=='…'&&_page===p,'bw-pager-ellipsis':p==='…'}" @click="p!=='…'&&goTo(p)" x-text="p"></button>
     </template>
     <template x-if="totalPages()>7"><input class="bw-pager-input" type="number" min="1" :max="totalPages()" placeholder="ir…" @keydown.enter="jumpTo($event)"></template>
     <button class="bw-pager-btn" :disabled="_page>=totalPages()" @click="goTo(_page+1)"><i class="fa-solid fa-chevron-right"></i></button>

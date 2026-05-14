@@ -350,6 +350,7 @@ a { text-decoration: none; }
 .bw-pager-btn.active { background: var(--color); color: #fff; border-color: var(--color); font-weight: 700; }
 .bw-pager-btn:disabled { opacity: .3; cursor: default; }
 .bw-pager-ellipsis { min-width: 28px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 13px; opacity: .4; }
+button.bw-pager-btn.bw-pager-ellipsis { background: transparent; border-color: transparent; cursor: default; pointer-events: none; }
 .bw-pager-input {
   width: 46px; height: 32px; text-align: center;
   border: var(--border); background: var(--wrap); color: var(--colortext);
