@@ -249,7 +249,12 @@
                   <template x-if="group.method!=='level'">
                     <div class="bw-poke-list">
                       <template x-for="(mv,i) in group.moves" :key="i">
-                        <button class="bw-poke-chip" @click="openMoveById(mv.move_id)" x-text="mv.moves&&mv.moves.name||mv.move_id"></button>
+                        <button class="bw-poke-chip" @click="openMoveById(mv.move_id)">
+                        <template x-if="mv.moves&&mv.moves.type">
+                          <img class="bw-type-img" :src="'assets/types/type-'+(mv.moves.type||'normal')+'.png'" :alt="mv.moves.type" @error="this.style.display='none'">
+                        </template>
+                        <span x-text="mv.moves&&mv.moves.name||mv.move_id"></span>
+                      </button>
                       </template>
                     </div>
                   </template>

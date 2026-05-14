@@ -224,7 +224,7 @@ a { text-decoration: none; }
   justify-content: center;
   padding: 10px;
 }
-.bw-pcard-img img { width: 90%; height: 90%; object-fit: contain; image-rendering: pixelated; }
+.bw-pcard-img img { width: 90%; height: 90%; object-fit: contain; image-rendering: auto; }
 .bw-pcard-ph {
   width: 72px; height: 72px;
   border-radius: 50%;
@@ -256,7 +256,7 @@ a { text-decoration: none; }
   border-radius: 8px;
   display: flex; align-items: center; justify-content: center;
 }
-.bw-icard-img img { max-width: 42px; max-height: 42px; object-fit: contain; image-rendering: pixelated; }
+.bw-icard-img img { max-width: 42px; max-height: 42px; object-fit: contain; image-rendering: auto; }
 .bw-icard-img-ph { font-size: 22px; opacity: .2; }
 .bw-icard-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .bw-icard-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -432,7 +432,7 @@ a { text-decoration: none; }
   padding: 16px;
   display: flex; flex-direction: column; align-items: center; gap: 10px;
 }
-.bw-artwork img { width: 148px; height: 148px; object-fit: contain; image-rendering: pixelated; }
+.bw-artwork img { width: 148px; height: 148px; object-fit: contain; image-rendering: auto; }
 .bw-artwork-ph { width: 148px; height: 148px; display: flex; align-items: center; justify-content: center; font-size: 60px; opacity: .15; }
 .bw-artwork-tog { display: flex; gap: 6px; }
 .bw-atbtn {
@@ -498,7 +498,7 @@ a { text-decoration: none; }
   background: var(--forums); border-radius: 10px;
   display: flex; align-items: center; justify-content: center;
 }
-.bw-carousel-frame img { max-width: 80px; max-height: 80px; object-fit: contain; image-rendering: pixelated; }
+.bw-carousel-frame img { max-width: 80px; max-height: 80px; object-fit: contain; image-rendering: auto; }
 .bw-carousel-dots { display: flex; gap: 5px; }
 .bw-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--row); cursor: pointer; transition: background .15s; }
 .bw-dot.active { background: var(--color); }
@@ -521,15 +521,46 @@ a { text-decoration: none; }
 .bw-craft-sep { opacity: .4; font-size: 11px; }
 
 /* Pokémon list chips (move/ability modal) */
-.bw-poke-list { display: flex; flex-wrap: wrap; gap: 5px; }
-.bw-poke-chip {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 3px 10px; background: var(--row);
-  border-radius: 20px; font-size: 12px; font-weight: 500;
-  cursor: pointer; border: var(--border); transition: background .15s, color .15s;
+.bw-poke-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 8px;
 }
-.bw-poke-chip:hover { background: var(--color); color: #fff; }
-.bw-poke-chip-lvl { opacity: .55; font-size: 11px; }
+.bw-poke-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 4px 6px;
+  background: var(--row);
+  border: var(--border);
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--colortext);
+  line-height: 1.3;
+  width: 100%;
+  transition: background .15s, box-shadow .15s, transform .15s;
+  word-break: break-word;
+}
+.bw-poke-chip:hover {
+  background: var(--forums);
+  box-shadow: 0 2px 8px rgba(0,0,0,.12);
+  transform: translateY(-1px);
+}
+.bw-poke-chip-lvl {
+  font-size: 9px;
+  font-weight: 500;
+  opacity: .55;
+  background: var(--wrap);
+  border-radius: 4px;
+  padding: 1px 5px;
+  width: 100%;
+  text-align: center;
+}
 
 /* Spinner in modal */
 .bw-mloading { display: flex; align-items: center; justify-content: center; padding: 40px; }
@@ -822,11 +853,10 @@ a { text-decoration: none; }
 
 /* ── CHIP THUMBNAIL IMAGE ────────────────────────────────── */
 .bw-chip-img {
-  width: 24px;
-  height: 24px;
+  width: 44px;
+  height: 44px;
   object-fit: contain;
-  image-rendering: pixelated;
-  flex-shrink: 0;
+  image-rendering: auto;
   border-radius: 4px;
   background: var(--forums);
 }
