@@ -536,34 +536,23 @@ button.bw-pager-btn.bw-pager-ellipsis { background: transparent; border-color: t
 
 
 
-/* Grid de 4 moves por linha */
+/* Grid de moves — 3 colunas, espaço suficiente p/ nomes longos */
 .bw-move-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 5px;
-}
-.bw-move-grid .bw-move-badge {
-  width: 100%;
-  overflow: hidden;
-}
-.bw-move-badge-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.bw-move-badge-lvl {
-  font-size: 9px;
-  opacity: .6;
-  font-weight: 400;
-  white-space: nowrap;
-  flex-shrink: 0;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
 }
 
 /* Move badge com ícone de tipo */
 .bw-move-badge {
   display: inline-flex;
   align-items: center;
-  min-height: 30px;
+  min-height: 36px;
+  width: 100%;
   border-radius: 20px;
   background: var(--bw-chip-bg);
   color: var(--bw-chip-color);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   border: none;
@@ -572,21 +561,21 @@ button.bw-pager-btn.bw-pager-ellipsis { background: transparent; border-color: t
   font-family: inherit;
   text-align: left;
   overflow: hidden;
-  padding-right: 10px;
-  gap: 8px;
+  padding-right: 12px;
+  gap: 10px;
 }
 .bw-move-badge:hover { opacity: .75; }
 
-/* Seção colorida à esquerda com corte via ::after */
+/* Seção colorida — largura fixa para alinhar todos os badges */
 .bw-move-badge-type {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   align-self: stretch;
-  padding: 0 18px 0 8px;
-  background: var(--tc, #888);
+  width: 44px;
   flex-shrink: 0;
+  background: var(--tc, #888);
 }
 .bw-move-badge-type::after {
   content: '';
@@ -594,16 +583,30 @@ button.bw-pager-btn.bw-pager-ellipsis { background: transparent; border-color: t
   right: 0;
   top: 0;
   bottom: 0;
-  width: 18px;
+  width: 16px;
   background: var(--bw-chip-bg);
   border-radius: 50% 0 0 50%;
 }
 .bw-move-badge-type img {
   position: relative;
   z-index: 1;
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   display: block;
+  flex-shrink: 0;
+}
+.bw-move-badge-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+.bw-move-badge-lvl {
+  font-size: 10px;
+  opacity: .6;
+  font-weight: 400;
+  white-space: nowrap;
   flex-shrink: 0;
 }
 
