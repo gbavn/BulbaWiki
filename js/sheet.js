@@ -105,4 +105,14 @@ var BwSheet = {
     try { await navigator.clipboard.writeText(text) } catch(e) { console.error(e) }
   },
 
+  async copiarItem(data) {
+    var m = data; if (!m) return
+    var sprites = Array.isArray(m.sprites) ? m.sprites : (m.sprites ? Object.values(m.sprites) : [])
+    var sprite  = sprites[0] || ''
+    var img     = sprite ? '[img(24px,24px)]' + sprite + '[/img] ' : ''
+    var text    = img + m.name + ' [01]'
+    try { await navigator.clipboard.writeText(text) } catch(e) { console.error(e) }
+  },
+
+
 }

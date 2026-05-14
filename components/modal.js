@@ -3,7 +3,7 @@ document.addEventListener('alpine:init', function() {
     var base = {
       open: false, type: null, data: null, extra: null, loading: false,
       history: [], copiedUrl: false, activeArtwork: 'normal', carouselIdx: 0,
-      fichaContestPoints: false, fichaCopiada: false, moveCopiado: false,
+      fichaContestPoints: false, fichaCopiada: false, moveCopiado: false, itemCopiado: false,
 
       async openModal(type, data, push) {
         push = push !== false
@@ -63,6 +63,11 @@ document.addEventListener('alpine:init', function() {
       async copiarMove() {
         await BwSheet.copiarMove(this.data)
         var self=this; self.moveCopiado=true; setTimeout(function(){ self.moveCopiado=false },2000)
+      },
+
+      async copiarItem() {
+        await BwSheet.copiarItem(this.data)
+        var self=this; self.itemCopiado=true; setTimeout(function(){ self.itemCopiado=false },2000)
       },
 
             async copyUrl() {

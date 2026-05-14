@@ -72,6 +72,11 @@
                 <i :class="moveCopiado?'fa-solid fa-check':'fa-solid fa-code'"></i>
               </button>
             </template>
+            <template x-if="type==='item'">
+              <button class="bw-mbtn" :class="{copied:itemCopiado}" @click="copiarItem()" :title="itemCopiado?'Item copiado!':'Copiar item (BBCode)'">
+                <i :class="itemCopiado?'fa-solid fa-check':'fa-solid fa-box'"></i>
+              </button>
+            </template>
             <button class="bw-mbtn" :class="{copied:copiedUrl}" @click="copyUrl()" :title="copiedUrl?'URL copiada!':'Copiar link'">
               <i :class="copiedUrl?'fa-solid fa-check':'fa-solid fa-link'"></i>
             </button>
