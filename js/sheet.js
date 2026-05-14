@@ -31,10 +31,13 @@ var BwSheet = {
     }
 
     // Abilities
-    var prim = (ex.abilities||[]).filter(function(a){return a.ability_type==='primary'}).map(function(a){return a.abilities&&a.abilities.name||''})
-    var sec  = (ex.abilities||[]).filter(function(a){return a.ability_type==='secondary'}).map(function(a){return a.abilities&&a.abilities.name||''})
-    var hid  = (ex.abilities||[]).filter(function(a){return a.ability_type==='hidden'}).map(function(a){return a.abilities&&a.abilities.name||''})
-    var abilStr = [...prim,...sec].filter(Boolean).join(' | ')
+    var regular = (ex.abilities||[])
+      .filter(function(a){ return (a.ability_type||'').toLowerCase() !== 'hidden' })
+      .map(function(a){ return a.abilities&&a.abilities.name||'' }).filter(Boolean)
+    var hid = (ex.abilities||[])
+      .filter(function(a){ return (a.ability_type||'').toLowerCase() === 'hidden' })
+      .map(function(a){ return a.abilities&&a.abilities.name||'' }).filter(Boolean)
+    var abilStr = regular.join(' | ')
     if (hid.length) abilStr += ' (HA: ' + hid.join(' | ') + ')'
 
     // Held items
@@ -51,8 +54,10 @@ var BwSheet = {
       .filter(Boolean)
 
     // Moves
-    var ORDER = { initial:0, evo:1, level:2, egg:3, learnable:4, contest:5, unknown:6 }
-    var moves = (ex.moves||[]).slice().sort(function(a,b){
+    var ORDER = { initial:0, evo:1, level:2 }
+    var moves = (ex.moves||[])
+      .filter(function(mv){ return mv.learn_method in ORDER })
+      .slice().sort(function(a,b){
       var oa=ORDER[a.learn_method]||99, ob=ORDER[b.learn_method]||99
       return oa!==ob ? oa-ob : (a.level||0)-(b.level||0)
     })
