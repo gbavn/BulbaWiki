@@ -536,18 +536,18 @@ button.bw-pager-btn.bw-pager-ellipsis { background: transparent; border-color: t
 
 
 
-/* Grid de moves — 3 colunas, espaço suficiente p/ nomes longos */
+/* Grid de moves — 2 colunas, cabe nomes longos como Z-Moves */
 .bw-move-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 6px;
 }
 
-/* Move badge com ícone de tipo */
+/* Move badge */
 .bw-move-badge {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  min-height: 36px;
+  height: 40px;
   width: 100%;
   border-radius: 20px;
   background: var(--bw-chip-bg);
@@ -561,19 +561,20 @@ button.bw-pager-btn.bw-pager-ellipsis { background: transparent; border-color: t
   font-family: inherit;
   text-align: left;
   overflow: hidden;
-  padding-right: 12px;
+  padding-right: 14px;
   gap: 10px;
 }
 .bw-move-badge:hover { opacity: .75; }
 
-/* Seção colorida — largura fixa para alinhar todos os badges */
+/* Seção colorida — 48px fixo, alinha todos os badges */
 .bw-move-badge-type {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   align-self: stretch;
-  width: 44px;
+  width: 48px;
+  min-width: 48px;
   flex-shrink: 0;
   background: var(--tc, #888);
 }
@@ -596,11 +597,11 @@ button.bw-pager-btn.bw-pager-ellipsis { background: transparent; border-color: t
   flex-shrink: 0;
 }
 .bw-move-badge-name {
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  flex: 1;
-  min-width: 0;
 }
 .bw-move-badge-lvl {
   font-size: 10px;
@@ -608,6 +609,7 @@ button.bw-pager-btn.bw-pager-ellipsis { background: transparent; border-color: t
   font-weight: 400;
   white-space: nowrap;
   flex-shrink: 0;
+  margin-left: 2px;
 }
 
 /* Craft slots */
