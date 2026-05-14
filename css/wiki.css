@@ -341,10 +341,11 @@ a { text-decoration: none; }
 .bw-pager { display: flex; align-items: center; justify-content: center; gap: 4px; flex-wrap: wrap; }
 .bw-pager-btn {
   min-width: 32px; height: 32px; padding: 0 8px;
-  background: var(--row); border: var(--border); border-radius: 6px;
+  background: var(--row); border: 1px solid rgba(0,0,0,.18); border-radius: 6px;
   font-size: 13px; color: var(--colortext);
   transition: background .15s, color .15s, border-color .15s;
   display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
 }
 .bw-pager-btn:hover:not(:disabled):not(.active) { background: var(--forums); }
 .bw-pager-btn.active { background: var(--color); color: #fff; border-color: var(--color); font-weight: 700; }
@@ -353,7 +354,7 @@ a { text-decoration: none; }
 button.bw-pager-btn.bw-pager-ellipsis { background: transparent; border-color: transparent; cursor: default; pointer-events: none; }
 .bw-pager-input {
   width: 46px; height: 32px; text-align: center;
-  border: var(--border); background: var(--wrap); color: var(--colortext);
+  border: 1px solid rgba(0,0,0,.18); background: var(--wrap); color: var(--colortext);
   border-radius: 6px; font-family: inherit; font-size: 13px; outline: none;
 }
 .bw-pager-input:focus { border: 2px solid var(--color); }

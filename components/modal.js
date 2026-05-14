@@ -10,7 +10,7 @@ document.addEventListener('alpine:init', function() {
         this.activeArtwork = 'normal'; this.carouselIdx = 0
         this._resetChips()
         this.open = true; this.type = type; this.data = data; this.extra = null; this.loading = true
-        history.pushState(null, '', '#/' + type + '/' + data.id)
+        try { history.replaceState(null, '', '#/' + type + '/' + data.id) } catch(e) {}
         try {
           if (type === 'pokemon') {
             const [moves, abilities, locations, drops] = await Promise.all([
@@ -44,7 +44,7 @@ document.addEventListener('alpine:init', function() {
       closeModal() {
         this.open = false; this.type = null; this.data = null; this.extra = null; this.history = []
         this._resetChips()
-        history.pushState('', document.title, window.location.pathname + window.location.search)
+        try { history.replaceState('', document.title, window.location.pathname + window.location.search) } catch(e) {}
       },
 
       goBack() {

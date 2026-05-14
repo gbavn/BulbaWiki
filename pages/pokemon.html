@@ -4,14 +4,16 @@
   f: { search:'', type1:'', type2:'', eggGroup:'', canBreed:false, hasArtwork:false },
 
   async init() {
+    var self = this
     this.raw = await BwAPI.loadPokemon()
     const eg = new Set()
     this.raw.forEach(p => { if(p.egg_group1) eg.add(p.egg_group1); if(p.egg_group2) eg.add(p.egg_group2) })
     this.allEggGroups = Array.from(eg).sort()
     this.applyFilters(); this.loading = false
-    document.addEventListener('bw:open-pokemon', e => {
-      const p = this.raw.find(x => x.id === e.detail.id)
-      if (p) this.open(p)
+    document.addEventListener('bw:open-detail', function(e) {
+      if (e.detail.type !== 'pokemon') return
+      var p = self.raw.find(function(x) { return x.id === e.detail.id })
+      if (p) self.open(p)
     })
   },
 
