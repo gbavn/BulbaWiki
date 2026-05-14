@@ -426,13 +426,13 @@
               <!-- Raridade + Estações -->
               <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
                 <template x-if="extra.berry.rarity">
-                  <span class="bw-badge" :style="berryRarityStyle(extra.berry.rarity)">
+                  <span class="bw-berry-pill" :style="berryRarityStyle(extra.berry.rarity)">
                     <i :class="berryRarityIcon(extra.berry.rarity)" style="margin-right:4px;font-size:9px"></i>
                     <span x-text="berryRarityLabel(extra.berry.rarity)"></span>
                   </span>
                 </template>
                 <template x-for="s in (extra.berry.seasons||[])" :key="s">
-                  <span class="bw-badge" :style="seasonStyle(s)">
+                  <span class="bw-berry-pill" :style="seasonStyle(s)">
                     <i :class="seasonIcon(s)" style="margin-right:4px;font-size:9px"></i>
                     <span x-text="seasonLabel(s)"></span>
                   </span>
@@ -446,7 +446,7 @@
                     <div class="bw-flavor-track">
                       <div class="bw-flavor-fill" :style="'width:'+fl.pct+'%;background:'+fl.color"></div>
                     </div>
-                    <span style="font-size:11px;width:18px;text-align:right;opacity:.55" x-text="fl.val"></span>
+                    <span class="bw-flavor-val" x-text="fl.val"></span>
                   </div>
                 </template>
               </div>

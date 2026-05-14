@@ -505,12 +505,28 @@ button.bw-pager-btn.bw-pager-ellipsis { background: transparent; border-color: t
 .bw-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--row); cursor: pointer; transition: background .15s; }
 .bw-dot.active { background: var(--color); }
 
+/* Berry pills */
+.bw-berry-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 11px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  line-height: 1.3;
+}
+.bw-berry-pill i { font-size: 10px; }
+
 /* Berry flavors */
-.bw-flavors { display: flex; flex-direction: column; gap: 5px; }
-.bw-flavor-row { display: flex; align-items: center; gap: 8px; }
-.bw-flavor-lbl { font-size: 12px; width: 52px; opacity: .7; }
-.bw-flavor-track { flex: 1; background: var(--row); border-radius: 20px; height: 6px; overflow: hidden; }
-.bw-flavor-fill { height: 100%; border-radius: 20px; background: var(--color2); }
+.bw-flavors { display: flex; flex-direction: column; gap: 7px; max-width: 280px; }
+.bw-flavor-row { display: flex; align-items: center; gap: 10px; }
+.bw-flavor-lbl { font-size: 11px; width: 58px; opacity: .65; text-align: right; }
+.bw-flavor-track { flex: 1; background: var(--row); border-radius: 20px; height: 8px; overflow: hidden; }
+.bw-flavor-fill { height: 100%; border-radius: 20px; background: var(--color2); transition: width .4s ease; }
+.bw-flavor-val { font-size: 11px; width: 20px; text-align: right; opacity: .5; }
 
 /* Craft slots */
 .bw-craft-slots { display: flex; flex-direction: column; gap: 6px; }

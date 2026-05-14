@@ -148,7 +148,7 @@ document.addEventListener('alpine:init', function() {
 
       berryRarityStyle(rarity) {
         var m = BERRY_RARITY_META[(rarity||'').toLowerCase()] || {}
-        return 'background:'+(m.bg||'var(--row)')+';color:'+(m.color||'var(--colortext)')
+        return 'background:'+(m.bg||'var(--row)')+';color:'+(m.color||'var(--colortext)')+';border-color:'+(m.border||'transparent')
       },
       berryRarityIcon(rarity) {
         return (BERRY_RARITY_META[(rarity||'').toLowerCase()]||{icon:'fa-solid fa-circle'}).icon
@@ -158,7 +158,7 @@ document.addEventListener('alpine:init', function() {
       },
       seasonStyle(s) {
         var m = SEASON_META[s] || {}
-        return 'background:'+(m.bg||'var(--row)')+';color:'+(m.color||'var(--colortext)')
+        return 'background:'+(m.bg||'var(--row)')+';color:'+(m.color||'var(--colortext)')+';border-color:'+(m.border||'transparent')
       },
       seasonIcon(s) { return (SEASON_META[s]||{icon:'fa-solid fa-calendar'}).icon },
       seasonLabel(s) { return (SEASON_META[s]||{label:s}).label },

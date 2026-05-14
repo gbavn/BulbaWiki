@@ -76,19 +76,19 @@ const STAT_META = [
 const PER_PAGE = 12
 
 const SEASON_META = {
-  spring: { label: 'Primavera', icon: 'fa-solid fa-seedling',  bg: '#e8f5e0', color: '#3a6a20' },
-  summer: { label: 'Verão',     icon: 'fa-solid fa-sun',       bg: '#fff8d0', color: '#7a6a10' },
-  autumn: { label: 'Outono',    icon: 'fa-solid fa-leaf',      bg: '#fdf0e8', color: '#8a3a10' },
-  winter: { label: 'Inverno',   icon: 'fa-solid fa-snowflake', bg: '#e8f8fd', color: '#1a6a7a' },
+  spring: { label: 'Primavera', icon: 'fa-solid fa-seedling',  bg: '#d4edda', color: '#155724', border: '#a8d8b8' },
+  summer: { label: 'Verão',     icon: 'fa-solid fa-sun',       bg: '#fff3cd', color: '#7a5c00', border: '#f0d87a' },
+  autumn: { label: 'Outono',    icon: 'fa-solid fa-leaf',      bg: '#fde8d8', color: '#7d3712', border: '#f0b890' },
+  winter: { label: 'Inverno',   icon: 'fa-solid fa-snowflake', bg: '#d0ecf8', color: '#0c5060', border: '#90c8e8' },
 }
 
 const BERRY_RARITY_META = {
-  'comum':      { label: 'Comum',      icon: 'fa-solid fa-circle',       bg: '#f0f0e8', color: '#5a5a3a' },
-  'intermediaria': { label: 'Intermédia', icon: 'fa-solid fa-circle-half-stroke', bg: '#e8f5e0', color: '#3a6a20' },
-  'intermediária': { label: 'Intermédia', icon: 'fa-solid fa-circle-half-stroke', bg: '#e8f5e0', color: '#3a6a20' },
-  'rara':       { label: 'Rara',       icon: 'fa-solid fa-diamond',      bg: '#e8e8fd', color: '#1a1a8a' },
-  'lendaria':   { label: 'Lendária',   icon: 'fa-solid fa-star',         bg: '#fff8d0', color: '#7a6a10' },
-  'lendária':   { label: 'Lendária',   icon: 'fa-solid fa-star',         bg: '#fff8d0', color: '#7a6a10' },
+  'comum':         { label: 'Comum',      icon: 'fa-solid fa-circle',               bg: '#ededea', color: '#4a4a2a', border: '#d0d0b8' },
+  'intermediaria': { label: 'Intermédia', icon: 'fa-solid fa-circle-half-stroke',   bg: '#d8f0d0', color: '#2a5a18', border: '#a8d890' },
+  'intermediária': { label: 'Intermédia', icon: 'fa-solid fa-circle-half-stroke',   bg: '#d8f0d0', color: '#2a5a18', border: '#a8d890' },
+  'rara':          { label: 'Rara',       icon: 'fa-solid fa-diamond',              bg: '#dcdcfc', color: '#18187a', border: '#a0a0e8' },
+  'lendaria':      { label: 'Lendária',   icon: 'fa-solid fa-star',                 bg: '#fff0b0', color: '#6a5000', border: '#e8d060' },
+  'lendária':      { label: 'Lendária',   icon: 'fa-solid fa-star',                 bg: '#fff0b0', color: '#6a5000', border: '#e8d060' },
 }
 
 const EGG_GROUP_LABELS = {
