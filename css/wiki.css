@@ -553,6 +553,32 @@ button.bw-pager-btn.bw-pager-ellipsis { background: transparent; border-color: t
 /* Berry pentagon */
 .bw-berry-chart { display: flex; justify-content: center; padding: 8px 0 0; }
 
+.bw-berry-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 14px;
+  margin-top: 10px;
+  padding: 0 8px;
+}
+.bw-berry-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+}
+.bw-berry-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.bw-berry-legend-val {
+  font-weight: 700;
+  opacity: .7;
+}
+
+
 /* Berry pills */
 .bw-berry-pill {
   display: inline-flex;

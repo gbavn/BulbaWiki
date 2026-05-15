@@ -489,6 +489,15 @@
               </div>
               <!-- Pentágono de sabores -->
               <div class="bw-berry-chart" x-html="berryPentagonSvg(extra.berry)"></div>
+              <div class="bw-berry-legend">
+                <template x-for="fl in berryFlavors(extra.berry)" :key="fl.label">
+                  <span class="bw-berry-legend-item">
+                    <span class="bw-berry-legend-dot" :style="'background:'+fl.color"></span>
+                    <span x-text="fl.label"></span>
+                    <span class="bw-berry-legend-val" x-text="fl.val+'/5'"></span>
+                  </span>
+                </template>
+              </div>
             </div>
           </template>
           </div><!-- /tab berry -->

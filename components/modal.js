@@ -167,12 +167,26 @@ document.addEventListener('alpine:init', function() {
       berryRarityLabel(rarity) {
         return (BERRY_RARITY_META[(rarity||'').toLowerCase()]||{label:rarity}).label
       },
+      _seasonKey(s) {
+        var k = (s||'').toLowerCase().trim()
+        var map = {
+          'primavera':'spring','spring':'spring',
+          'verão':'summer','verao':'summer','summer':'summer',
+          'outono':'autumn','fall':'autumn','autumn':'autumn',
+          'inverno':'winter','winter':'winter'
+        }
+        return map[k] || k
+      },
       seasonStyle(s) {
-        var m = SEASON_META[s] || {}
+        var m = SEASON_META[this._seasonKey(s)] || {}
         return 'background:'+(m.bg||'var(--row)')+';color:'+(m.color||'var(--colortext)')+';border-color:'+(m.border||'transparent')
       },
-      seasonIcon(s) { return (SEASON_META[s]||{icon:'fa-solid fa-calendar'}).icon },
-      seasonLabel(s) { return (SEASON_META[s]||{label:s}).label },
+      seasonIcon(s) {
+        return (SEASON_META[this._seasonKey(s)]||{icon:'fa-solid fa-calendar'}).icon
+      },
+      seasonLabel(s) {
+        return (SEASON_META[this._seasonKey(s)]||{label:s}).label
+      },
 
       hasLocations(loc) { return loc && ((loc.maps&&loc.maps.length)||(loc.routeObjects&&loc.routeObjects.length)) },
       hasDrops(drops)   { return drops && ((drops.held&&drops.held.length)||(drops.produced&&drops.produced.length)) },
@@ -182,37 +196,41 @@ document.addEventListener('alpine:init', function() {
 
       berryPentagonSvg(berry) {
         if (!berry) return ''
-        var R=80, cx=100, cy=100, n=5, a0=-Math.PI/2
-        var flavors=[
-          {name:'Beleza',  val:Math.min(5,berry.flavor_beauty||0), col:'#e91e8c'},
-          {name:'Espert.', val:Math.min(5,berry.flavor_clever||0), col:'#4caf50'},
-          {name:'Estilo',  val:Math.min(5,berry.flavor_cool  ||0), col:'#2196f3'},
-          {name:'Fofura',  val:Math.min(5,berry.flavor_cute  ||0), col:'#ff9800'},
-          {name:'Força',   val:Math.min(5,berry.flavor_tough ||0), col:'#f44336'},
+        var R=75, cx=110, cy=110, n=5, a0=-Math.PI/2
+        var vals=[
+          Math.min(5,berry.flavor_beauty||0),
+          Math.min(5,berry.flavor_clever||0),
+          Math.min(5,berry.flavor_cool  ||0),
+          Math.min(5,berry.flavor_cute  ||0),
+          Math.min(5,berry.flavor_tough ||0),
         ]
-        function pts(r){ return Array.from({length:n},function(_,i){
-          var a=a0+(2*Math.PI*i)/n; return (cx+r*Math.cos(a)).toFixed(1)+','+(cy+r*Math.sin(a)).toFixed(1)
-        }).join(' ') }
-        var rings=[1,2,3,4].map(function(v){return '<polygon points="'+pts(v/5*R)+'" fill="none" stroke="var(--border,rgba(0,0,0,.12))" stroke-width="0.8"/>'}).join('')
+        var cols=['#e91e8c','#4caf50','#2196f3','#ff9800','#f44336']
+        function pt(r,i){ var a=a0+(2*Math.PI*i)/n; return [(cx+r*Math.cos(a)).toFixed(1),(cy+r*Math.sin(a)).toFixed(1)] }
+        // Anéis de referência (1-5)
+        var rings=[1,2,3,4,5].map(function(v){
+          var p=Array.from({length:n},function(_,i){return pt(v/5*R,i).join(',')}).join(' ')
+          return '<polygon points="'+p+'" fill="'+(v===5?'var(--row,#eee)':'none')+'" stroke="rgba(0,0,0,.1)" stroke-width="'+(v===5?1:.5)+'"/>'
+        }).join('')
+        // Eixos
         var axes=Array.from({length:n},function(_,i){
-          var a=a0+(2*Math.PI*i)/n
-          return '<line x1="'+cx+'" y1="'+cy+'" x2="'+(cx+R*Math.cos(a)).toFixed(1)+'" y2="'+(cy+R*Math.sin(a)).toFixed(1)+'" stroke="var(--border,rgba(0,0,0,.12))" stroke-width="0.8"/>'
+          var p=pt(R,i); return '<line x1="'+cx+'" y1="'+cy+'" x2="'+p[0]+'" y2="'+p[1]+'" stroke="rgba(0,0,0,.1)" stroke-width=".8"/>'
         }).join('')
-        var datapts=flavors.map(function(f,i){
-          var a=a0+(2*Math.PI*i)/n, r=f.val/5*R
-          return (cx+r*Math.cos(a)).toFixed(1)+','+(cy+r*Math.sin(a)).toFixed(1)
-        }).join(' ')
-        var labels=flavors.map(function(f,i){
-          var a=a0+(2*Math.PI*i)/n, lr=R+16
-          var x=(cx+lr*Math.cos(a)).toFixed(1), y=(cy+lr*Math.sin(a)).toFixed(1)
-          var va=Math.abs(Math.cos(a))<0.3?'middle':Math.sin(a)<0?'auto':'hanging'
-          return '<text x="'+x+'" y="'+y+'" text-anchor="middle" dominant-baseline="'+va+'" font-size="10" fill="var(--colortext)" opacity=".7">'+f.name+'</text>'
+        // Polígono de dados
+        var dpts=vals.map(function(v,i){return pt(v/5*R,i).join(',')}).join(' ')
+        // Pontos coloridos nos vértices de dados
+        var dots=vals.map(function(v,i){
+          var p=pt(v/5*R,i)
+          return '<circle cx="'+p[0]+'" cy="'+p[1]+'" r="3.5" fill="'+cols[i]+'" stroke="#fff" stroke-width="1"/>'
         }).join('')
-        return '<svg viewBox="0 0 200 200" width="180" height="180" style="display:block;margin:0 auto">'+
-          '<polygon points="'+pts(R)+'" fill="var(--row,#eee)" stroke="var(--border,rgba(0,0,0,.15))" stroke-width="1"/>'+
+        // Valores nos vértices (número)
+        var nums=vals.map(function(v,i){
+          var p=pt(v/5*R+11,i)
+          return '<text x="'+p[0]+'" y="'+p[1]+'" text-anchor="middle" dominant-baseline="middle" font-size="9" font-weight="700" fill="'+cols[i]+'">'+v+'</text>'
+        }).join('')
+        return '<svg viewBox="0 0 220 220" width="200" height="200" style="display:block;margin:0 auto">'+
           rings+axes+
-          '<polygon points="'+datapts+'" fill="rgba(100,150,220,.35)" stroke="#6496c8" stroke-width="1.5"/>'+
-          labels+'</svg>'
+          '<polygon points="'+dpts+'" fill="rgba(100,150,220,.25)" stroke="#6496c8" stroke-width="1.5"/>'+
+          dots+nums+'</svg>'
       },
 
       moveTypeColor(type) { return TYPE_HEX_BBCODE[(type||'normal').toLowerCase()] || '#888' },
