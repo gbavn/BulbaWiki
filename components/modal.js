@@ -137,6 +137,13 @@ document.addEventListener('alpine:init', function() {
         return Array.isArray(item.sprites) ? item.sprites.filter(Boolean) : []
       },
 
+      slotOptionSprite(opt) {
+        if (!opt.item_id) return null
+        var item = BwAPI.getItemById(opt.item_id)
+        var sp = item && item.sprites
+        if (!sp) return null
+        return Array.isArray(sp) ? sp[0]||null : (typeof sp==='object' ? Object.values(sp)[0]||null : null)
+      },
       slotOptionLabel(opt) {
         if (opt.item_id) { const item = BwAPI.getItemById(opt.item_id); return { text:(item&&item.name)||'Item #'+opt.item_id, itemId:opt.item_id } }
         if (opt.category_id) { const cat = BwAPI.getCategoryById(opt.category_id); return { text:'Qualquer: '+((cat&&cat.name)||'Cat.#'+opt.category_id), itemId:null } }

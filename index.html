@@ -459,8 +459,17 @@
                       <template x-for="(opt,oi) in slot.crafting_slot_options" :key="oi">
                         <span>
                           <template x-if="oi>0"><span class="bw-craft-sep">ou</span></template>
-                          <template x-if="slotOptionLabel(opt).itemId"><button class="bw-mlink" @click="openItemById(slotOptionLabel(opt).itemId)" x-text="slotOptionLabel(opt).text"></button></template>
-                          <template x-if="!slotOptionLabel(opt).itemId"><span x-text="slotOptionLabel(opt).text"></span></template>
+                          <template x-if="slotOptionLabel(opt).itemId">
+                            <button class="bw-poke-chip" @click="openItemById(slotOptionLabel(opt).itemId)">
+                              <template x-if="slotOptionSprite(opt)">
+                                <img :src="slotOptionSprite(opt)" class="bw-chip-img" loading="lazy">
+                              </template>
+                              <span x-text="slotOptionLabel(opt).text"></span>
+                            </button>
+                          </template>
+                          <template x-if="!slotOptionLabel(opt).itemId">
+                            <span class="bw-poke-chip" style="cursor:default;pointer-events:none" x-text="slotOptionLabel(opt).text"></span>
+                          </template>
                         </span>
                       </template>
                     </div>
