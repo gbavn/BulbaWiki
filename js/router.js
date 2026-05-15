@@ -1,3 +1,15 @@
+;(function() {
+  if (window.BW_BASE_URL) return
+  var scripts = document.getElementsByTagName('script')
+  for (var i = 0; i < scripts.length; i++) {
+    var src = scripts[i].src || ''
+    if (src.indexOf('/js/router.js') !== -1) {
+      window.BW_BASE_URL = src.replace('/js/router.js', '') + '/'
+      break
+    }
+  }
+})()
+
 // ============================================================
 // BulbaWiki — router.js
 // Hash router: escuta window.location.hash e injeta fragmentos
