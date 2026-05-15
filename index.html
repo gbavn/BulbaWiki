@@ -220,7 +220,7 @@
                           <img :src="h.items.sprites[0]" class="bw-chip-img" loading="lazy">
                         </template>
                         <span x-text="h.items&&h.items.name"></span>
-                        <template x-if="h.roll"><span class="bw-poke-chip-lvl" x-text="h.roll"></span></template>
+                        <template x-if="h.roll"><span class="bw-poke-chip-lvl"><i class="fa-solid fa-dice" style="font-size:9px;margin-right:2px;opacity:.6"></i><span x-text="h.roll"></span></span></template>
                       </button>
                     </template>
                   </div>
@@ -369,7 +369,7 @@
                           <img :src="h.pokemon.artwork_normal" class="bw-chip-img" loading="lazy">
                         </template>
                         <span x-text="h.pokemon&&h.pokemon.name"></span>
-                        <template x-if="h.roll"><span class="bw-poke-chip-lvl" x-text="h.roll"></span></template>
+                        <template x-if="h.roll"><span class="bw-poke-chip-lvl"><i class="fa-solid fa-dice" style="font-size:9px;margin-right:2px;opacity:.6"></i><span x-text="h.roll"></span></span></template>
                       </button>
                     </template>
                   </div>
