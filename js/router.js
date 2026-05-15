@@ -49,8 +49,9 @@ function parseHash(hash) {
 
 async function loadPage(file) {
   if (_pageCache[file]) return _pageCache[file]
+  var base = window.BW_BASE_URL || ''
   try {
-    var res = await fetch(file)
+    var res = await fetch(base + file)
     if (!res.ok) throw new Error('HTTP ' + res.status + ' — ' + file)
     var html = await res.text()
     _pageCache[file] = html
