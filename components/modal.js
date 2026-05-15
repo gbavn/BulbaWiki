@@ -147,11 +147,11 @@ document.addEventListener('alpine:init', function() {
       berryFlavors(berry) {
         if (!berry) return []
         var flavors = [
-          { label:'Beleza',    val:berry.flavor_beauty||0, color:'#e91e8c' },
-          { label:'Esperteza', val:berry.flavor_clever||0, color:'#4caf50' },
-          { label:'Estilo',    val:berry.flavor_cool  ||0, color:'#2196f3' },
-          { label:'Fofura',    val:berry.flavor_cute  ||0, color:'#ff9800' },
-          { label:'Força',     val:berry.flavor_tough ||0, color:'#f44336' },
+          { label:'Beauty',    val:berry.flavor_beauty||0, color:'#e91e8c' },
+          { label:'Clever',    val:berry.flavor_clever||0, color:'#4caf50' },
+          { label:'Cool',      val:berry.flavor_cool  ||0, color:'#2196f3' },
+          { label:'Cute',      val:berry.flavor_cute  ||0, color:'#ff9800' },
+          { label:'Tough',     val:berry.flavor_tough ||0, color:'#f44336' },
         ]
         var max = Math.max(10, Math.max.apply(null, flavors.map(function(f){ return f.val })))
         return flavors.map(function(f) { return Object.assign({}, f, { pct: Math.round((f.val/max)*100) }) })
