@@ -511,6 +511,48 @@ button.bw-pager-btn.bw-pager-ellipsis { background: transparent; border-color: t
 .bw-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--row); cursor: pointer; transition: background .15s; }
 .bw-dot.active { background: var(--color); }
 
+
+/* Tabs dos modais */
+.bw-tab-nav {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  padding: 0 16px;
+  flex-shrink: 0;
+  gap: 0;
+}
+.bw-tab-btn {
+  padding: 10px 18px;
+  font-size: 12px;
+  font-weight: 700;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--colortext);
+  opacity: .45;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: opacity .15s, border-color .15s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+.bw-tab-btn.active { opacity: 1; border-bottom-color: var(--color); color: var(--color); }
+.bw-tab-btn:hover:not(.active) { opacity: .7; }
+
+/* Move stat em linha única */
+.bw-move-statline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px;
+  background: var(--row);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.bw-move-statline .bw-move-stat-cell { flex: 1; min-width: 80px; }
+
+/* Berry pentagon */
+.bw-berry-chart { display: flex; justify-content: center; padding: 8px 0 0; }
+
 /* Berry pills */
 .bw-berry-pill {
   display: inline-flex;

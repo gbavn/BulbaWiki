@@ -39,7 +39,7 @@
     @keydown.escape.window="if(open) closeModal()">
 
     <div class="bw-overlay" x-show="open" x-cloak @click.self="closeModal()">
-      <div class="bw-modal" x-show="open" x-transition>
+      <div class="bw-modal" x-show="open" x-transition :style="type==='pokemon'?'max-width:1060px':type==='item'?'max-width:580px':'max-width:480px'">
 
         <!-- Header -->
         <div class="bw-mhead" x-show="data">
@@ -81,7 +81,12 @@
 
         <!-- ── POKÉMON ──────────────────────────────────────── -->
         <template x-if="type==='pokemon'&&!loading&&data">
-        <div class="bw-mbody">
+        <div>
+          <div class="bw-tab-nav">
+            <button class="bw-tab-btn" :class="{active:activeTab==='info'}" @click="activeTab='info'">Pokémon</button>
+            <button class="bw-tab-btn" :class="{active:activeTab==='moves'}" @click="activeTab='moves'">Moves</button>
+          </div>
+          <div class="bw-mbody" x-show="activeTab==='info'">
           <div class="bw-artwork">
             <template x-if="artworkUrl(data)"><img :src="artworkUrl(data)" :alt="data.name"></template>
             <template x-if="!artworkUrl(data)"><div class="bw-artwork-ph"><i class="fa-solid fa-circle-question"></i></div></template>
@@ -257,6 +262,8 @@
           </template>
 
           <!-- Moves -->
+          </div><!-- /tab info -->
+          <div class="bw-mbody" x-show="activeTab==='moves'">
           <template x-if="extra&&extra.moves&&extra.moves.length>0">
             <div class="bw-msect">
               <div class="bw-msect-title">Moves aprendidos</div>
@@ -308,12 +315,20 @@
               </template>
             </div>
           </template>
-        </div>
+          </div><!-- /tab moves -->
+        </div><!-- /tabs wrapper -->
         </template>
 
         <!-- ── ITEM ────────────────────────────────────────── -->
         <template x-if="type==='item'&&!loading&&data">
-        <div class="bw-mbody">
+        <div>
+          <div class="bw-tab-nav">
+            <button class="bw-tab-btn" :class="{active:activeTab==='info'}" @click="activeTab='info'">Info</button>
+            <button class="bw-tab-btn" :class="{active:activeTab==='obtido'}" @click="activeTab='obtido'" x-show="extra&&hasItemSources(extra.sources)">Obtido</button>
+            <button class="bw-tab-btn" :class="{active:activeTab==='craft'}" @click="activeTab='craft'" x-show="data.is_craftable&&extra&&extra.craft">Craft</button>
+            <button class="bw-tab-btn" :class="{active:activeTab==='berry'}" @click="activeTab='berry'" x-show="data.is_berry&&extra&&extra.berry">Berry</button>
+          </div>
+          <div class="bw-mbody">
           <template x-if="extra&&itemSprites(data).length>0">
             <div class="bw-carousel">
               <div class="bw-carousel-frame"><img :src="itemSprites(data)[carouselIdx]" :alt="data.name"></div>
@@ -325,6 +340,7 @@
             </div>
           </template>
 
+          <div x-show="activeTab==='info'">
           <div class="bw-msect">
             <div class="bw-msect-title">Preço</div>
             <div class="bw-ival" style="font-size:15px;font-weight:700;color:var(--color)"
@@ -450,6 +466,8 @@
             </div>
           </template>
 
+          </div><!-- /tab craft -->
+          <div x-show="activeTab==='berry'">
           <!-- Berry -->
           <template x-if="extra&&extra.berry">
             <div class="bw-msect">
@@ -469,34 +487,26 @@
                   </span>
                 </template>
               </div>
-              <!-- Flavor bars -->
-              <div class="bw-flavors">
-                <template x-for="fl in berryFlavors(extra.berry)" :key="fl.label">
-                  <div class="bw-flavor-row">
-                    <span class="bw-flavor-lbl" x-text="fl.label"></span>
-                    <div class="bw-flavor-track">
-                      <div class="bw-flavor-fill" :style="'width:'+fl.pct+'%;background:'+fl.color"></div>
-                    </div>
-                    <span class="bw-flavor-val" x-text="fl.val"></span>
-                  </div>
-                </template>
-              </div>
+              <!-- Pentágono de sabores -->
+              <div class="bw-berry-chart" x-html="berryPentagonSvg(extra.berry)"></div>
             </div>
           </template>
-        </div>
+          </div><!-- /tab berry -->
+          </div><!-- /bw-mbody -->
+        </div><!-- /tabs wrapper -->
         </template>
 
         <!-- ── MOVE ────────────────────────────────────────── -->
         <template x-if="type==='move'&&!loading&&data">
         <div class="bw-mbody">
-          <div class="bw-move-stats">
+          <div class="bw-move-statline">
             <template x-if="data.power!=null"><div class="bw-move-stat-cell"><span class="bw-move-stat-lbl">Poder</span><span class="bw-move-stat-val" x-text="data.power"></span></div></template>
             <template x-if="data.accuracy!=null"><div class="bw-move-stat-cell"><span class="bw-move-stat-lbl">Precisão</span><span class="bw-move-stat-val" x-text="data.accuracy+'%'"></span></div></template>
-            <template x-if="data.pp!=null"><div class="bw-move-stat-cell"><span class="bw-move-stat-lbl">PP</span><span class="bw-move-stat-val" x-text="data.pp"></span></div></template>
-            <div class="bw-move-stat-cell"><span class="bw-move-stat-lbl">Prioridade</span><span class="bw-move-stat-val" x-text="(data.priority||0)>0?'+'+data.priority:(data.priority||0)"></span></div>
+            <template x-if="data.priority&&data.priority!==0"><div class="bw-move-stat-cell"><span class="bw-move-stat-lbl">Prioridade</span><span class="bw-move-stat-val" x-text="data.priority>0?'+'+data.priority:data.priority"></span></div></template>
+            <template x-if="data.contest_points"><div class="bw-move-stat-cell"><span class="bw-move-stat-lbl">Contest</span><span class="bw-move-stat-val" style="font-size:11px" x-text="data.contest_points"></span></div></template>
           </div>
           <template x-if="data.description"><div class="bw-msect"><div class="bw-msect-title">Descrição</div><div class="bw-prose" x-text="data.description"></div></div></template>
-          <template x-if="data.contest_points"><div class="bw-msect"><div class="bw-msect-title">Contest Points</div><div class="bw-ival" x-text="data.contest_points"></div></div></template>
+
           <template x-if="extra&&extra.learnedBy&&extra.learnedBy.length>0">
             <div class="bw-msect">
               <div class="bw-msect-title">Aprendido por</div>

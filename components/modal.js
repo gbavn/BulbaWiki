@@ -3,12 +3,12 @@ document.addEventListener('alpine:init', function() {
     var base = {
       open: false, type: null, data: null, extra: null, loading: false,
       history: [], copiedUrl: false, activeArtwork: 'normal', carouselIdx: 0,
-      contestPoints: false, copied: false,
+      contestPoints: true,  copied: false, activeTab: 'info',
 
       async openModal(type, data, push) {
         push = push !== false
         if (push && this.open) this.history.push({ type: this.type, data: this.data })
-        this.activeArtwork = 'normal'; this.carouselIdx = 0
+        this.activeArtwork = 'normal'; this.carouselIdx = 0; this.activeTab = 'info'
         this._resetChips()
         this.open = true; this.type = type; this.data = data; this.extra = null; this.loading = true
         try { history.replaceState(null, '', '#/' + type + '/' + data.id) } catch(e) {}
@@ -178,6 +178,42 @@ document.addEventListener('alpine:init', function() {
       hasDrops(drops)   { return drops && ((drops.held&&drops.held.length)||(drops.produced&&drops.produced.length)) },
       hasDroppedBy(db)  { return db && ((db.held&&db.held.length)||(db.produced&&db.produced.length)) },
       hasItemSources(s) { return s && ((s.routeObjects&&s.routeObjects.length)||(s.quests&&s.quests.length)) },
+
+
+      berryPentagonSvg(berry) {
+        if (!berry) return ''
+        var R=80, cx=100, cy=100, n=5, a0=-Math.PI/2
+        var flavors=[
+          {name:'Beleza',  val:Math.min(5,berry.flavor_beauty||0), col:'#e91e8c'},
+          {name:'Espert.', val:Math.min(5,berry.flavor_clever||0), col:'#4caf50'},
+          {name:'Estilo',  val:Math.min(5,berry.flavor_cool  ||0), col:'#2196f3'},
+          {name:'Fofura',  val:Math.min(5,berry.flavor_cute  ||0), col:'#ff9800'},
+          {name:'Força',   val:Math.min(5,berry.flavor_tough ||0), col:'#f44336'},
+        ]
+        function pts(r){ return Array.from({length:n},function(_,i){
+          var a=a0+(2*Math.PI*i)/n; return (cx+r*Math.cos(a)).toFixed(1)+','+(cy+r*Math.sin(a)).toFixed(1)
+        }).join(' ') }
+        var rings=[1,2,3,4].map(function(v){return '<polygon points="'+pts(v/5*R)+'" fill="none" stroke="var(--border,rgba(0,0,0,.12))" stroke-width="0.8"/>'}).join('')
+        var axes=Array.from({length:n},function(_,i){
+          var a=a0+(2*Math.PI*i)/n
+          return '<line x1="'+cx+'" y1="'+cy+'" x2="'+(cx+R*Math.cos(a)).toFixed(1)+'" y2="'+(cy+R*Math.sin(a)).toFixed(1)+'" stroke="var(--border,rgba(0,0,0,.12))" stroke-width="0.8"/>'
+        }).join('')
+        var datapts=flavors.map(function(f,i){
+          var a=a0+(2*Math.PI*i)/n, r=f.val/5*R
+          return (cx+r*Math.cos(a)).toFixed(1)+','+(cy+r*Math.sin(a)).toFixed(1)
+        }).join(' ')
+        var labels=flavors.map(function(f,i){
+          var a=a0+(2*Math.PI*i)/n, lr=R+16
+          var x=(cx+lr*Math.cos(a)).toFixed(1), y=(cy+lr*Math.sin(a)).toFixed(1)
+          var va=Math.abs(Math.cos(a))<0.3?'middle':Math.sin(a)<0?'auto':'hanging'
+          return '<text x="'+x+'" y="'+y+'" text-anchor="middle" dominant-baseline="'+va+'" font-size="10" fill="var(--colortext)" opacity=".7">'+f.name+'</text>'
+        }).join('')
+        return '<svg viewBox="0 0 200 200" width="180" height="180" style="display:block;margin:0 auto">'+
+          '<polygon points="'+pts(R)+'" fill="var(--row,#eee)" stroke="var(--border,rgba(0,0,0,.15))" stroke-width="1"/>'+
+          rings+axes+
+          '<polygon points="'+datapts+'" fill="rgba(100,150,220,.35)" stroke="#6496c8" stroke-width="1.5"/>'+
+          labels+'</svg>'
+      },
 
       moveTypeColor(type) { return TYPE_HEX_BBCODE[(type||'normal').toLowerCase()] || '#888' },
 
