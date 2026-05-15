@@ -18,6 +18,8 @@
   --shadow:    0px 0px 30px #888;
   --bw-chip-bg: #2d2d2d;
   --bw-chip-color: #ffffff;
+  --header: url(https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1.png);
+  --title: Inter, sans-serif;
 }
 .tema-escuro {
   --color:     #6e336e;
@@ -511,6 +513,58 @@ button.bw-pager-btn.bw-pager-ellipsis { background: transparent; border-color: t
 .bw-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--row); cursor: pointer; transition: background .15s; }
 .bw-dot.active { background: var(--color); }
 
+
+
+/* ── Header estilo Oak's Lab ─────────────────────────────────────────────── */
+.bulbah1 {
+  height: 180px;
+  margin: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  font-size: 0;
+  background: var(--header) center/cover no-repeat;
+  border-radius: 0;
+  position: relative;
+  flex-shrink: 0;
+}
+.bulbah1::before {
+  content: "";
+  background: linear-gradient(-90deg, transparent 40%, var(--color) 120%);
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+.header-dice {
+  position: relative;
+  margin-left: 48px;
+  z-index: 2;
+}
+.bulbah1 titulo {
+  display: block;
+}
+.bulbah1 titulo h2 {
+  font-size: 42px;
+  font-family: var(--title, Inter, sans-serif);
+  font-weight: 900;
+  color: #fff;
+  margin: 0;
+  padding: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.1;
+  text-shadow: 0 2px 8px rgba(0,0,0,.3);
+}
+.bulbah1 sub {
+  display: block;
+  color: rgba(255,255,255,.8);
+  text-transform: uppercase;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  margin-top: 4px;
+}
 
 /* Tabs dos modais */
 .bw-tab-nav {
