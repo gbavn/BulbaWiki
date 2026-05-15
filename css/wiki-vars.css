@@ -1,0 +1,42 @@
+/* ============================================================
+   BulbaWiki — wiki-vars.css
+   Fallbacks de variáveis CSS apenas para uso STANDALONE (GitHub Pages).
+   Não carregar quando embeddado no fórum — o fórum já define estas vars.
+   ============================================================ */
+
+/* ============================================================
+   BulbaWiki — wiki.css
+   Usa as variáveis CSS do fórum (--color, --wrap, --row, etc.)
+   NÃO redeclara variáveis já definidas pelo tema do fórum.
+   Fallbacks definidos aqui só para uso standalone (GitHub Pages).
+   ============================================================ */
+
+/* ── FALLBACKS STANDALONE (iframe ignora se fórum já definiu) */
+:root {
+  --color:     #479047;
+  --color2:    #8BC34A;
+  --wrap:      #eeeeee;
+  --row:       #e0e0e0;
+  --forums:    #eaeaea;
+  --border:    2px solid #fff;
+  --border2:   2px solid var(--color);
+  --colortext: #222;
+  --shadow:    0px 0px 30px #888;
+  --bw-chip-bg: #2d2d2d;
+  --bw-chip-color: #ffffff;
+  --header: url(https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1.png);
+  --title: Inter, sans-serif;
+}
+.tema-escuro {
+  --color:     #6e336e;
+  --color2:    #7e9fd0;
+  --wrap:      #111;
+  --row:       #191919;
+  --forums:    #161616;
+  --border:    2px solid #272727;
+  --border2:   2px solid var(--color);
+  --colortext: #eeeeee;
+  --shadow:    0px 0px 30px #222;
+  --bw-chip-bg: #1a1a1a;
+  --bw-chip-color: #ffffff;
+}

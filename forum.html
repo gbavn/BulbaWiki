@@ -1,23 +1,27 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BulbaWiki</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- ============================================================
+     BulbaWiki — Versão Fórum
+     Cole este conteúdo no painel admin do fórum (Gerenciar → Páginas).
+     Os scripts são carregados do GitHub Pages.
+     O fórum fornece automaticamente: --color, --wrap, --row, .bulbah1, etc.
+     NÃO carrega wiki-vars.css (o fórum já tem as variáveis).
+     ============================================================ -->
+
+<!-- Estilos do wiki (apenas componentes, sem sobrescrever vars do fórum) -->
+<link rel="stylesheet" href="https://gbavn.github.io/BulbaWiki/css/wiki-base.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="css/wiki-vars.css">
-<link rel="stylesheet" href="css/wiki-base.css">
-<script src="js/constants.js"></script>
-  <script src="js/sheet.js"></script>
-<script src="js/utils.js"></script>
-<script src="js/api.js"></script>
-<script src="js/hooks.js"></script>
-<script src="js/router.js"></script>
-<script src="components/modal.js"></script>
+
+<!-- Scripts -->
+<script src="https://gbavn.github.io/BulbaWiki/js/constants.js"></script>
+<script src="https://gbavn.github.io/BulbaWiki/js/sheet.js"></script>
+<script src="https://gbavn.github.io/BulbaWiki/js/utils.js"></script>
+<script src="https://gbavn.github.io/BulbaWiki/js/api.js"></script>
+<script src="https://gbavn.github.io/BulbaWiki/js/hooks.js"></script>
+<script src="https://gbavn.github.io/BulbaWiki/js/router.js"></script>
+<script src="https://gbavn.github.io/BulbaWiki/components/modal.js"></script>
 <script defer src="https://unpkg.com/alpinejs@3.14.1/dist/cdn.min.js"></script>
-</head>
-<body>
+
+<!-- Assets (type icons carregam do GitHub Pages via URL nas imagens) -->
+
 <div id="bulbawiki">
 
   <!-- Header estilo Oak's Lab -->
@@ -53,10 +57,10 @@
             <template x-if="type==='pokemon'&&data"><div class="bw-mhead-sub" x-text="pokemonId(data)"></div></template>
             <template x-if="type==='item'&&data&&data.category_name"><div class="bw-mhead-sub" x-text="data.category_name"></div></template>
             <div class="bw-mhead-badges">
-              <template x-if="type==='pokemon'&&data&&data.type1"><img class="bw-type-img" :src="'assets/types/type-'+data.type1+'.png'" :alt="data.type1" @error="this.style.display='none'"></template>
-              <template x-if="type==='pokemon'&&data&&data.type2"><img class="bw-type-img" :src="'assets/types/type-'+data.type2+'.png'" :alt="data.type2" @error="this.style.display='none'"></template>
-              <template x-if="type==='move'&&data&&data.type"><img class="bw-type-img" :src="'assets/types/type-'+data.type+'.png'" :alt="data.type" @error="this.style.display='none'"></template>
-              <template x-if="type==='move'&&data&&data.category"><img class="bw-cat-img" :src="'assets/categories/category-'+data.category+'.png'" :alt="data.category" @error="this.style.display='none'"></template>
+              <template x-if="type==='pokemon'&&data&&data.type1"><img class="bw-type-img" :src="'https://gbavn.github.io/BulbaWiki/assets/types/type-'+data.type1+'.png'" :alt="data.type1" @error="this.style.display='none'"></template>
+              <template x-if="type==='pokemon'&&data&&data.type2"><img class="bw-type-img" :src="'https://gbavn.github.io/BulbaWiki/assets/types/type-'+data.type2+'.png'" :alt="data.type2" @error="this.style.display='none'"></template>
+              <template x-if="type==='move'&&data&&data.type"><img class="bw-type-img" :src="'https://gbavn.github.io/BulbaWiki/assets/types/type-'+data.type+'.png'" :alt="data.type" @error="this.style.display='none'"></template>
+              <template x-if="type==='move'&&data&&data.category"><img class="bw-cat-img" :src="'https://gbavn.github.io/BulbaWiki/assets/categories/category-'+data.category+'.png'" :alt="data.category" @error="this.style.display='none'"></template>
               <template x-if="(type==='move'||type==='ability')&&data&&data.status"><span class="bw-badge-status" :style="statusBadgeStyle(data.status)" x-text="statusLabel(data.status)"></span></template>
             </div>
           </div>
@@ -280,7 +284,7 @@
                     <div class="bw-move-grid">
                       <template x-for="(mv,i) in group.moves" :key="i">
                         <button class="bw-move-badge" :style="'--tc:'+moveTypeColor(mv.moves&&mv.moves.type)" @click="openMoveById(mv.move_id)">
-                          <span class="bw-move-badge-type"><img :src="'assets/type-icons/'+(mv.moves&&mv.moves.type||'normal')+'.svg'" @error="this.style.display='none'"></span>
+                          <span class="bw-move-badge-type"><img :src="'https://gbavn.github.io/BulbaWiki/assets/type-icons/'+(mv.moves&&mv.moves.type||'normal')+'.svg'" @error="this.style.display='none'"></span>
                           <span class="bw-move-badge-name" x-text="mv.moves&&mv.moves.name||mv.move_id"></span>
                           <template x-if="mv.level"><span class="bw-move-badge-lvl" x-text="'(Nv.'+mv.level+')'"></span></template>
                         </button>
@@ -292,7 +296,7 @@
                     <div class="bw-move-grid">
                       <template x-for="(mv,i) in group.moves" :key="i">
                         <button class="bw-move-badge" :style="'--tc:'+moveTypeColor(mv.moves&&mv.moves.type)" @click="openMoveById(mv.move_id)">
-                          <span class="bw-move-badge-type"><img :src="'assets/type-icons/'+(mv.moves&&mv.moves.type||'normal')+'.svg'" @error="this.style.display='none'"></span>
+                          <span class="bw-move-badge-type"><img :src="'https://gbavn.github.io/BulbaWiki/assets/type-icons/'+(mv.moves&&mv.moves.type||'normal')+'.svg'" @error="this.style.display='none'"></span>
                           <span class="bw-move-badge-name" x-text="mv.moves&&mv.moves.name||mv.move_id"></span>
                         </button>
                       </template>
@@ -304,7 +308,7 @@
                       <div class="bw-move-grid">
                         <template x-for="(mv,i) in visibleChips('learnable', group.moves)" :key="i">
                           <button class="bw-move-badge" :style="'--tc:'+moveTypeColor(mv.moves&&mv.moves.type)" @click="openMoveById(mv.move_id)">
-                            <span class="bw-move-badge-type"><img :src="'assets/type-icons/'+(mv.moves&&mv.moves.type||'normal')+'.svg'" @error="this.style.display='none'"></span>
+                            <span class="bw-move-badge-type"><img :src="'https://gbavn.github.io/BulbaWiki/assets/type-icons/'+(mv.moves&&mv.moves.type||'normal')+'.svg'" @error="this.style.display='none'"></span>
                             <span class="bw-move-badge-name" x-text="mv.moves&&mv.moves.name||mv.move_id"></span>
                           </button>
                         </template>
@@ -577,21 +581,3 @@
   </div>
 
 </div>
-
-<script>
-function _setActiveTab(hash) {
-  const path = (hash||'').replace(/^#/,'')
-  document.querySelectorAll('.bw-tab').forEach(function(b){ b.classList.remove('active') })
-  const map = { '/pokemon':'tab-pokemon', '/moves':'tab-moves', '/abilities':'tab-abilities', '/items':'tab-items' }
-  for (const prefix in map) {
-    if (path.startsWith(prefix)) { const el=document.getElementById(map[prefix]); if(el)el.classList.add('active'); break }
-  }
-}
-window.addEventListener('hashchange', function(){ _setActiveTab(window.location.hash) })
-document.addEventListener('alpine:init', function(){
-  _setActiveTab(window.location.hash)
-  setTimeout(initRouter, 0)
-})
-</script>
-</body>
-</html>
