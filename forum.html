@@ -569,19 +569,20 @@
 
 </div>
 
-<!-- Alpine.js -->
-<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
-
-
 <!-- 1. Constants -->
 <script src="https://gbavn.github.io/BulbaWiki/js/constants.js"></script>
 <script src="https://gbavn.github.io/BulbaWiki/js/sheet.js"></script>
 
-<!-- 2. Core -->
+<!-- 2. Core utils e API -->
 <script src="https://gbavn.github.io/BulbaWiki/js/utils.js"></script>
 <script src="https://gbavn.github.io/BulbaWiki/js/api.js"></script>
 <script src="https://gbavn.github.io/BulbaWiki/js/hooks.js"></script>
-<script src="https://gbavn.github.io/BulbaWiki/js/router.js"></script>
 
-<!-- 3. Components -->
+<!-- 3. Componente modal (registra Alpine.data antes do Alpine carregar) -->
 <script src="https://gbavn.github.io/BulbaWiki/components/modal.js"></script>
+
+<!-- 4. Alpine — sem defer, depois das registrações, antes do router -->
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+
+<!-- 5. Router — Alpine já disponível quando navigate() é chamado -->
+<script src="https://gbavn.github.io/BulbaWiki/js/router.js"></script>
